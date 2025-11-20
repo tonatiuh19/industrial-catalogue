@@ -147,54 +147,60 @@ const ProductDetail = () => {
       {selectedProducts.length > 0 && (
         <button
           onClick={openWizard}
-          className="fixed bottom-6 right-6 z-30 flex items-center gap-3 rounded-full bg-[#c03818] px-6 py-4 font-bold text-white shadow-2xl transition-all hover:scale-105 hover:brightness-110"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 flex items-center gap-2 sm:gap-3 rounded-full bg-[#c03818] px-4 py-3 sm:px-6 sm:py-4 font-bold text-white shadow-2xl transition-all hover:scale-105 hover:brightness-110 text-sm sm:text-base"
         >
-          <ShoppingBag className="h-5 w-5" />
-          <span>Ver Cotización ({selectedProducts.length})</span>
+          <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="hidden xs:inline">
+            Ver Cotización ({selectedProducts.length})
+          </span>
+          <span className="xs:hidden">({selectedProducts.length})</span>
         </button>
       )}
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Breadcrumb */}
-        <nav className="mb-6 flex items-center gap-2 text-sm text-gray-600">
-          <Link to="/" className="hover:text-[#c03818]">
+        <nav className="mb-4 sm:mb-6 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600 overflow-x-auto">
+          <Link to="/" className="hover:text-[#c03818] whitespace-nowrap">
             Inicio
           </Link>
           <span>/</span>
-          <Link to="/catalog" className="hover:text-[#c03818]">
+          <Link
+            to="/catalog"
+            className="hover:text-[#c03818] whitespace-nowrap"
+          >
             Catálogo
           </Link>
           <span>/</span>
-          <span className="text-gray-900">{product.name}</span>
+          <span className="text-gray-900 truncate">{product.name}</span>
         </nav>
 
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="mb-6 flex items-center gap-2 text-[#1b3148] transition-colors hover:text-[#c03818]"
+          className="mb-4 sm:mb-6 flex items-center gap-2 text-[#1b3148] transition-colors hover:text-[#c03818] active:scale-95"
         >
-          <ArrowLeft className="h-5 w-5" />
-          <span className="font-medium">Volver</span>
+          <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="font-medium text-sm sm:text-base">Volver</span>
         </button>
 
-        <div className="grid gap-8 lg:grid-cols-2">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-2">
           {/* Image Gallery */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Main Image */}
-            <div className="relative aspect-square overflow-hidden rounded-2xl bg-white shadow-lg">
+            <div className="relative aspect-square overflow-hidden rounded-xl sm:rounded-2xl bg-white shadow-lg">
               <img
                 src={images[selectedImage]}
                 alt={product.name}
                 className="h-full w-full object-cover"
               />
               {!product.is_active && (
-                <div className="absolute right-4 top-4 rounded-full bg-red-500 px-6 py-2 text-sm font-bold text-white shadow-lg">
+                <div className="absolute right-2 top-2 sm:right-4 sm:top-4 rounded-full bg-red-500 px-3 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm font-bold text-white shadow-lg">
                   Agotado
                 </div>
               )}
               {product.is_featured && (
-                <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-[#1b3148] px-4 py-2 text-sm font-bold text-white shadow-lg">
-                  <Star className="h-4 w-4 fill-current" />
+                <div className="absolute left-2 top-2 sm:left-4 sm:top-4 flex items-center gap-1.5 sm:gap-2 rounded-full bg-[#1b3148] px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold text-white shadow-lg">
+                  <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-current" />
                   Destacado
                 </div>
               )}
@@ -208,9 +214,9 @@ const ProductDetail = () => {
                         prev === 0 ? images.length - 1 : prev - 1,
                       )
                     }
-                    className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-lg transition-all hover:bg-white hover:scale-110"
+                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 sm:p-3 shadow-lg transition-all hover:bg-white active:scale-95 hover:scale-110"
                   >
-                    <ChevronLeft className="h-6 w-6" />
+                    <ChevronLeft className="h-4 w-4 sm:h-6 sm:w-6" />
                   </button>
                   <button
                     onClick={() =>
@@ -218,9 +224,9 @@ const ProductDetail = () => {
                         prev === images.length - 1 ? 0 : prev + 1,
                       )
                     }
-                    className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-lg transition-all hover:bg-white hover:scale-110"
+                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 sm:p-3 shadow-lg transition-all hover:bg-white active:scale-95 hover:scale-110"
                   >
-                    <ChevronRight className="h-6 w-6" />
+                    <ChevronRight className="h-4 w-4 sm:h-6 sm:w-6" />
                   </button>
                 </>
               )}
@@ -228,7 +234,7 @@ const ProductDetail = () => {
 
             {/* Thumbnail Gallery */}
             {images.length > 1 && (
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-4 gap-2 sm:gap-4">
                 {images.map((img, idx) => (
                   <button
                     key={idx}
@@ -251,38 +257,40 @@ const ProductDetail = () => {
           </div>
 
           {/* Product Info */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* SKU & Badge */}
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-bold uppercase tracking-wider text-[#1b3148]">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#1b3148] truncate">
                 SKU: {product.sku}
               </p>
               {product.category_name && (
-                <span className="rounded-full bg-gray-100 px-4 py-1 text-sm font-semibold text-gray-700">
+                <span className="rounded-full bg-gray-100 px-3 py-1 sm:px-4 sm:py-1 text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">
                   {product.category_name}
                 </span>
               )}
             </div>
 
             {/* Product Name */}
-            <h1 className="text-4xl font-black text-gray-900 lg:text-5xl">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 leading-tight">
               {product.name}
             </h1>
 
             {/* Description */}
             {product.description && (
-              <p className="text-lg leading-relaxed text-gray-600">
+              <p className="text-sm sm:text-base lg:text-lg leading-relaxed text-gray-600">
                 {product.description}
               </p>
             )}
 
             {/* Price */}
-            <div className="rounded-2xl bg-gradient-to-br from-[#1b3148] to-[#1b3148]/90 p-8 text-white">
-              <p className="mb-2 text-sm font-medium opacity-90">Precio</p>
-              <p className="text-5xl font-black">
+            <div className="rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#1b3148] to-[#1b3148]/90 p-6 sm:p-8 text-white">
+              <p className="mb-1 sm:mb-2 text-xs sm:text-sm font-medium opacity-90">
+                Precio
+              </p>
+              <p className="text-3xl sm:text-4xl lg:text-5xl font-black">
                 ${product.price.toLocaleString()}
               </p>
-              <p className="mt-2 text-sm font-medium opacity-75">
+              <p className="mt-1 sm:mt-2 text-xs sm:text-sm font-medium opacity-75">
                 {product.currency}
               </p>
             </div>
@@ -322,51 +330,54 @@ const ProductDetail = () => {
             </div>
 
             {/* Quantity Selector & Add to Quote */}
-            <div className="space-y-4 rounded-2xl bg-white p-6 shadow-lg">
+            <div className="space-y-3 sm:space-y-4 rounded-xl sm:rounded-2xl bg-white p-4 sm:p-6 shadow-lg">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-bold text-gray-700">
+                <label className="text-xs sm:text-sm font-bold text-gray-700">
                   Cantidad
                 </label>
                 {quotedQuantity > 0 && (
-                  <span className="rounded-full bg-[#c03818]/10 px-3 py-1 text-sm font-bold text-[#c03818]">
+                  <span className="rounded-full bg-[#c03818]/10 px-2.5 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm font-bold text-[#c03818]">
                     {quotedQuantity} en cotización
                   </span>
                 )}
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3 rounded-lg border-2 border-gray-200 bg-gray-50 px-6 py-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                <div className="flex items-center justify-center gap-2 sm:gap-3 rounded-lg border-2 border-gray-200 bg-gray-50 px-4 sm:px-6 py-3">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="text-gray-600 transition-colors hover:text-[#c03818]"
+                    className="text-gray-600 transition-colors hover:text-[#c03818] active:scale-95 p-1"
                   >
-                    <Minus className="h-5 w-5" />
+                    <Minus className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
-                  <span className="w-12 text-center text-xl font-bold text-gray-900">
+                  <span className="w-10 sm:w-12 text-center text-lg sm:text-xl font-bold text-gray-900">
                     {quantity}
                   </span>
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    className="text-gray-600 transition-colors hover:text-[#c03818]"
+                    className="text-gray-600 transition-colors hover:text-[#c03818] active:scale-95 p-1"
                   >
-                    <Plus className="h-5 w-5" />
+                    <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
                 </div>
 
                 <button
                   onClick={handleAddToQuote}
                   disabled={!product.is_active}
-                  className="flex-1 flex items-center justify-center gap-3 rounded-lg bg-[#c03818] px-8 py-4 font-bold text-white shadow-lg transition-all hover:brightness-110 hover:shadow-xl disabled:cursor-not-allowed disabled:bg-gray-400"
+                  className="flex-1 flex items-center justify-center gap-2 sm:gap-3 rounded-lg bg-[#c03818] px-4 sm:px-8 py-3 sm:py-4 font-bold text-white shadow-lg transition-all hover:brightness-110 hover:shadow-xl active:scale-95 disabled:cursor-not-allowed disabled:bg-gray-400 text-sm sm:text-base"
                 >
                   {addedToQuote ? (
                     <>
-                      <Check className="h-5 w-5" />
+                      <Check className="h-4 w-4 sm:h-5 sm:w-5" />
                       Agregado
                     </>
                   ) : (
                     <>
-                      <Plus className="h-5 w-5" />
-                      Agregar a Cotización
+                      <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
+                      <span className="hidden xs:inline">
+                        Agregar a Cotización
+                      </span>
+                      <span className="xs:hidden">Agregar</span>
                     </>
                   )}
                 </button>
@@ -383,34 +394,44 @@ const ProductDetail = () => {
             </div>
 
             {/* Features */}
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="flex items-center gap-3 rounded-lg bg-white p-4 shadow-sm">
-                <div className="rounded-full bg-[#c03818]/10 p-3">
-                  <Package className="h-5 w-5 text-[#c03818]" />
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3 rounded-lg bg-white p-3 sm:p-4 shadow-sm">
+                <div className="rounded-full bg-[#c03818]/10 p-2 sm:p-3">
+                  <Package className="h-4 w-4 sm:h-5 sm:w-5 text-[#c03818]" />
                 </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-500">Stock</p>
-                  <p className="font-bold text-gray-900">Disponible</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 rounded-lg bg-white p-4 shadow-sm">
-                <div className="rounded-full bg-[#c03818]/10 p-3">
-                  <Truck className="h-5 w-5 text-[#c03818]" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-500">Envío</p>
-                  <p className="font-bold text-gray-900">Rápido</p>
+                <div className="text-center sm:text-left">
+                  <p className="text-[10px] sm:text-xs font-semibold text-gray-500">
+                    Stock
+                  </p>
+                  <p className="font-bold text-gray-900 text-xs sm:text-base">
+                    Disponible
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 rounded-lg bg-white p-4 shadow-sm">
-                <div className="rounded-full bg-[#c03818]/10 p-3">
-                  <Shield className="h-5 w-5 text-[#c03818]" />
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3 rounded-lg bg-white p-3 sm:p-4 shadow-sm">
+                <div className="rounded-full bg-[#c03818]/10 p-2 sm:p-3">
+                  <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-[#c03818]" />
                 </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-500">
+                <div className="text-center sm:text-left">
+                  <p className="text-[10px] sm:text-xs font-semibold text-gray-500">
+                    Envío
+                  </p>
+                  <p className="font-bold text-gray-900 text-xs sm:text-base">
+                    Rápido
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3 rounded-lg bg-white p-3 sm:p-4 shadow-sm">
+                <div className="rounded-full bg-[#c03818]/10 p-2 sm:p-3">
+                  <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-[#c03818]" />
+                </div>
+                <div className="text-center sm:text-left">
+                  <p className="text-[10px] sm:text-xs font-semibold text-gray-500">
                     Garantía
                   </p>
-                  <p className="font-bold text-gray-900">Incluida</p>
+                  <p className="font-bold text-gray-900 text-xs sm:text-base">
+                    Incluida
+                  </p>
                 </div>
               </div>
             </div>

@@ -28,6 +28,11 @@ const Catalogue = () => {
   const [sortBy, setSortBy] = useState<SortOption>("relevance");
   const [addedProductId, setAddedProductId] = useState<number | null>(null);
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Load filter options and products on mount
   useEffect(() => {
     actions.loadAllFilterOptions();
@@ -106,16 +111,19 @@ const Catalogue = () => {
       {selectedProducts.length > 0 && (
         <button
           onClick={openWizard}
-          className="fixed bottom-6 right-6 z-30 flex items-center gap-3 rounded-full bg-[#c03818] px-6 py-4 font-bold text-white shadow-2xl transition-all hover:scale-105 hover:brightness-110"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 flex items-center gap-2 sm:gap-3 rounded-full bg-[#c03818] px-4 py-3 sm:px-6 sm:py-4 font-bold text-white shadow-2xl transition-all hover:scale-105 hover:brightness-110 text-sm sm:text-base"
         >
-          <ShoppingBag className="h-5 w-5" />
-          <span>Ver Cotización ({selectedProducts.length})</span>
+          <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="hidden xs:inline">
+            Ver Cotización ({selectedProducts.length})
+          </span>
+          <span className="xs:hidden">({selectedProducts.length})</span>
         </button>
       )}
       {/* Filter Button (Mobile) */}
       <button
         onClick={() => setShowFilters(!showFilters)}
-        className="fixed bottom-6 left-6 z-30 flex items-center gap-2 rounded-full bg-[#1b3148] px-6 py-3 font-semibold text-white shadow-lg transition-all hover:brightness-110 md:hidden"
+        className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-30 flex items-center gap-2 rounded-full bg-[#1b3148] px-4 py-2.5 sm:px-6 sm:py-3 font-semibold text-white shadow-lg transition-all hover:brightness-110 md:hidden text-sm sm:text-base"
       >
         <svg
           className="h-5 w-5"

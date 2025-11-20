@@ -136,19 +136,19 @@ export default function Home() {
         </div>
 
         {/* Hero Content */}
-        <div className="flex-1 flex flex-col justify-center pt-20 sm:pt-24 pb-16 sm:pb-24 relative z-10">
+        <div className="flex-1 flex flex-col justify-center pt-24 sm:pt-32 pb-12 sm:pb-24 relative z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-            <div className="text-center space-y-8 max-w-4xl mx-auto">
+            <div className="text-center space-y-6 sm:space-y-8 max-w-4xl mx-auto">
               {/* Main Heading */}
-              <h1 className="text-5xl sm:text-6xl lg:text-8xl font-black leading-tight text-white fade-in-up-delay-1">
-                <span className="block mb-2">Catálogo</span>
+              <h1 className="text-4xl sm:text-6xl lg:text-8xl font-black leading-tight text-white fade-in-up-delay-1">
+                <span className="block mb-1 sm:mb-2">Catálogo</span>
                 <span className="block bg-gradient-to-r from-[#c03818] via-orange-400 to-[#c03818] bg-clip-text text-transparent">
                   Industrial Moderno
                 </span>
               </h1>
 
               {/* Description */}
-              <p className="text-lg sm:text-xl lg:text-2xl text-gray-200 max-w-3xl mx-auto leading-relaxed fade-in-up-delay-2">
+              <p className="text-base sm:text-xl lg:text-2xl text-gray-200 max-w-3xl mx-auto leading-relaxed fade-in-up-delay-2 px-2">
                 Accede a un completo catálogo de herramientas profesionales,
                 equipamiento industrial confiable y componentes de precisión.
                 <span className="block mt-2 text-[#c03818] font-semibold">
@@ -157,21 +157,21 @@ export default function Home() {
               </p>
 
               {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8 fade-in-up-delay-3">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 sm:pt-8 fade-in-up-delay-3 px-4">
                 <Link
                   to="/catalog"
-                  className="group inline-flex items-center justify-center gap-3 px-8 sm:px-10 py-4 sm:py-5 bg-[#c03818] text-white font-bold text-lg rounded-xl hover:bg-[#d94520] hover:shadow-2xl hover:shadow-[#c03818]/50 transition-all duration-300 active:scale-95"
+                  className="group inline-flex items-center justify-center gap-2 sm:gap-3 px-6 sm:px-10 py-3 sm:py-5 bg-[#c03818] text-white font-bold text-base sm:text-lg rounded-xl hover:bg-[#d94520] hover:shadow-2xl hover:shadow-[#c03818]/50 transition-all duration-300 active:scale-95"
                 >
                   Explorar Catálogo
                   <ArrowRight
-                    size={22}
-                    className="group-hover:translate-x-1 transition-transform"
+                    size={20}
+                    className="group-hover:translate-x-1 transition-transform sm:w-[22px] sm:h-[22px]"
                   />
                 </Link>
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-6 sm:gap-12 pt-12 sm:pt-16 max-w-3xl mx-auto fade-in-up-delay-4">
+              <div className="grid grid-cols-3 gap-3 sm:gap-12 pt-8 sm:pt-16 max-w-3xl mx-auto fade-in-up-delay-4 px-2">
                 {[
                   { number: "5K+", label: "Productos" },
                   { number: "100+", label: "Marcas" },
@@ -179,12 +179,12 @@ export default function Home() {
                 ].map((stat, i) => (
                   <div
                     key={i}
-                    className="text-center backdrop-blur-sm bg-white/5 rounded-xl p-4 sm:p-6 border border-white/10 hover:bg-white/10 transition-all duration-300"
+                    className="text-center backdrop-blur-sm bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-6 border border-white/10 hover:bg-white/10 transition-all duration-300"
                   >
-                    <p className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#c03818] mb-2">
+                    <p className="text-2xl sm:text-4xl lg:text-5xl font-black text-[#c03818] mb-1 sm:mb-2">
                       {stat.number}
                     </p>
-                    <p className="text-sm sm:text-base text-gray-300 font-medium">
+                    <p className="text-xs sm:text-base text-gray-300 font-medium">
                       {stat.label}
                     </p>
                   </div>
@@ -194,8 +194,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 animate-bounce">
+        {/* Scroll indicator - hidden on mobile */}
+        <div className="hidden md:block absolute bottom-8 left-1/2 -translate-x-1/2 z-10 animate-bounce">
           <div className="w-6 h-10 rounded-full border-2 border-white/40 flex items-start justify-center p-2">
             <div className="w-1 h-3 bg-white/60 rounded-full animate-pulse"></div>
           </div>
