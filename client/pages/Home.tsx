@@ -844,6 +844,14 @@ export default function Home() {
                     Cookies
                   </a>
                 </li>
+                <li>
+                  <a
+                    href="/admin/login"
+                    className="hover:text-accent transition-colors duration-200 opacity-50 hover:opacity-100"
+                  >
+                    Admin
+                  </a>
+                </li>
               </ul>
             </div>
           </div>

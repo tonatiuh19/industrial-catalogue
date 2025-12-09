@@ -65,6 +65,28 @@ export const categoriesApi = {
     const params = includeInactive ? "?include_inactive=true" : "";
     return httpClient.get<CategoryListResponse>(`/categories${params}`);
   },
+  create: (data: { name: string; slug: string; description?: string }) => {
+    return httpClient.post("/categories", data);
+  },
+  update: (
+    id: number,
+    data: {
+      name: string;
+      slug: string;
+      description?: string;
+      is_active?: boolean;
+    },
+  ) => {
+    return httpClient.put<ApiResponse>(`/categories/${id}`, data);
+  },
+  delete: (id: number) => {
+    return httpClient.delete<ApiResponse>(`/categories/${id}`);
+  },
+  validateSlug: (slug: string) => {
+    return httpClient.get<{ available: boolean }>(
+      `/categories/validate-slug?slug=${slug}`,
+    );
+  },
 };
 
 // Manufacturers API
@@ -72,6 +94,23 @@ export const manufacturersApi = {
   getAll: (includeInactive?: boolean) => {
     const params = includeInactive ? "?include_inactive=true" : "";
     return httpClient.get<ManufacturerListResponse>(`/manufacturers${params}`);
+  },
+  create: (data: { name: string; description?: string; website?: string }) => {
+    return httpClient.post("/manufacturers", data);
+  },
+  update: (
+    id: number,
+    data: {
+      name: string;
+      description?: string;
+      website?: string;
+      is_active?: boolean;
+    },
+  ) => {
+    return httpClient.put<ApiResponse>(`/manufacturers/${id}`, data);
+  },
+  delete: (id: number) => {
+    return httpClient.delete<ApiResponse>(`/manufacturers/${id}`);
   },
 };
 
@@ -92,6 +131,27 @@ export const brandsApi = {
       `/brands?${queryParams.toString()}`,
     );
   },
+  create: (data: {
+    name: string;
+    manufacturer_id: number;
+    description?: string;
+  }) => {
+    return httpClient.post("/brands", data);
+  },
+  update: (
+    id: number,
+    data: {
+      name: string;
+      manufacturer_id: number;
+      description?: string;
+      is_active?: boolean;
+    },
+  ) => {
+    return httpClient.put<ApiResponse>(`/brands/${id}`, data);
+  },
+  delete: (id: number) => {
+    return httpClient.delete<ApiResponse>(`/brands/${id}`);
+  },
 };
 
 // Models API
@@ -107,6 +167,23 @@ export const modelsApi = {
     return httpClient.get<ModelListResponse>(
       `/models?${queryParams.toString()}`,
     );
+  },
+  create: (data: { name: string; brand_id: number; description?: string }) => {
+    return httpClient.post("/models", data);
+  },
+  update: (
+    id: number,
+    data: {
+      name: string;
+      brand_id: number;
+      description?: string;
+      is_active?: boolean;
+    },
+  ) => {
+    return httpClient.put<ApiResponse>(`/models/${id}`, data);
+  },
+  delete: (id: number) => {
+    return httpClient.delete<ApiResponse>(`/models/${id}`);
   },
 };
 

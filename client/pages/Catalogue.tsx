@@ -150,12 +150,12 @@ const Catalogue = () => {
           </div>
 
           <div className="relative z-10">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#c03818]/20 px-4 py-2 backdrop-blur-sm">
+            {/*             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#c03818]/20 px-4 py-2 backdrop-blur-sm">
               <div className="h-2 w-2 animate-pulse rounded-full bg-[#c03818]" />
               <span className="text-sm font-bold text-white">
                 {products.pagination.total} productos disponibles
               </span>
-            </div>
+            </div> */}
 
             <h1 className="mb-4 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-5xl font-black text-transparent md:text-6xl">
               Catálogo de Productos
