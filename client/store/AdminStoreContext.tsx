@@ -14,6 +14,7 @@ import {
   brandsApi,
   modelsApi,
 } from "@/services/api.service";
+import { uploadImages, deleteImage } from "@/services/image-upload.service";
 
 interface AdminStoreContextType {
   state: AdminAppState;
@@ -25,6 +26,16 @@ interface AdminStoreContextType {
   createAdminProduct: (data: any) => Promise<void>;
   updateAdminProduct: (id: number, data: any) => Promise<void>;
   deleteAdminProduct: (id: number) => Promise<void>;
+  uploadProductImages: (
+    productId: string | number,
+    mainImage?: File,
+    extraImages?: File[],
+  ) => Promise<any>;
+  deleteProductImage: (
+    productId: string | number,
+    filename: string,
+    imageType: "main" | "extra",
+  ) => Promise<void>;
 
   // Quotes Actions
   fetchAdminQuotes: (
@@ -163,6 +174,72 @@ export const AdminStoreProvider: React.FC<{ children: React.ReactNode }> = ({
       dispatch({
         type: "ADMIN_PRODUCTS_ERROR",
         payload: error.message || "Failed to delete product",
+      });
+      throw error;
+    }
+  };
+
+  const uploadProductImages = async (
+    productId: string | number,
+    mainImage?: File,
+    extraImages?: File[],
+  ) => {
+    try {
+      dispatch({
+        type: "ADMIN_PRODUCT_IMAGES_LOADING",
+        payload: "Uploading images...",
+      });
+      const result = await uploadImages(productId, mainImage, extraImages);
+
+      if (result.success) {
+        dispatch({
+          type: "ADMIN_PRODUCT_IMAGES_SUCCESS",
+          payload: "Images uploaded successfully",
+        });
+      } else {
+        dispatch({
+          type: "ADMIN_PRODUCT_IMAGES_ERROR",
+          payload: result.error || "Failed to upload images",
+        });
+      }
+
+      return result;
+    } catch (error: any) {
+      dispatch({
+        type: "ADMIN_PRODUCT_IMAGES_ERROR",
+        payload: error.message || "Failed to upload images",
+      });
+      throw error;
+    }
+  };
+
+  const deleteProductImage = async (
+    productId: string | number,
+    filename: string,
+    imageType: "main" | "extra",
+  ) => {
+    try {
+      dispatch({
+        type: "ADMIN_PRODUCT_IMAGES_LOADING",
+        payload: "Deleting image...",
+      });
+      const result = await deleteImage(productId, filename, imageType);
+
+      if (result.success) {
+        dispatch({
+          type: "ADMIN_PRODUCT_IMAGES_SUCCESS",
+          payload: "Image deleted successfully",
+        });
+      } else {
+        dispatch({
+          type: "ADMIN_PRODUCT_IMAGES_ERROR",
+          payload: result.error || "Failed to delete image",
+        });
+      }
+    } catch (error: any) {
+      dispatch({
+        type: "ADMIN_PRODUCT_IMAGES_ERROR",
+        payload: error.message || "Failed to delete image",
       });
       throw error;
     }
@@ -456,6 +533,8 @@ export const AdminStoreProvider: React.FC<{ children: React.ReactNode }> = ({
     createAdminProduct,
     updateAdminProduct,
     deleteAdminProduct,
+    uploadProductImages,
+    deleteProductImage,
     fetchAdminQuotes,
     fetchAdminQuote,
     updateQuoteStatus,

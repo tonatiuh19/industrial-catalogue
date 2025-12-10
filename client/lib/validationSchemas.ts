@@ -14,16 +14,7 @@ export const categoryValidationSchema = Yup.object({
       "Slug must be lowercase alphanumeric with hyphens",
     )
     .min(2, "Slug must be at least 2 characters")
-    .max(100, "Slug must not exceed 100 characters")
-    .test("unique-slug", "This slug is already in use", async (value) => {
-      if (!value) return true;
-      try {
-        const response = await categoriesApi.validateSlug(value);
-        return response.data.available;
-      } catch (error) {
-        return true; // Allow on error
-      }
-    }),
+    .max(100, "Slug must not exceed 100 characters"),
   description: Yup.string().max(
     500,
     "Description must not exceed 500 characters",

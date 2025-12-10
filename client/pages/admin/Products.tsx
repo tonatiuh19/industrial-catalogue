@@ -449,11 +449,11 @@ export default function Products() {
 
   const filteredProducts = productsState.products.filter(
     (product) =>
-      product.name.toLowerCase().includes(search.toLowerCase()) ||
+      product.name?.toLowerCase().includes(search.toLowerCase()) ||
       (product.brand &&
-        product.brand.toLowerCase().includes(search.toLowerCase())) ||
+        product.brand?.toLowerCase().includes(search.toLowerCase())) ||
       (product.category &&
-        product.category.toLowerCase().includes(search.toLowerCase())),
+        product.category?.toLowerCase().includes(search.toLowerCase())),
   );
 
   const filteredCategories = reference.categories.filter((cat) =>

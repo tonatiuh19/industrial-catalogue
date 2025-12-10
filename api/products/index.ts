@@ -212,8 +212,8 @@ async function createProduct(req: VercelRequest, res: VercelResponse) {
       `INSERT INTO products (
         sku, name, description, long_description, category_id, price, currency,
         stock_quantity, unit, manufacturer, brand, model, specifications,
-        images, thumbnail_url, is_featured, is_active, meta_title, meta_description
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        images, main_image, extra_images, is_featured, is_active, meta_title, meta_description
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         productData.sku,
         productData.name,
@@ -231,7 +231,8 @@ async function createProduct(req: VercelRequest, res: VercelResponse) {
           ? JSON.stringify(productData.specifications)
           : null,
         productData.images ? JSON.stringify(productData.images) : null,
-        productData.thumbnail_url || null,
+        productData.main_image || null,
+        productData.extra_images || null,
         productData.is_featured ? 1 : 0,
         productData.is_active !== false ? 1 : 0,
         productData.meta_title || null,

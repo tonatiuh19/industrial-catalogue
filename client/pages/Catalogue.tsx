@@ -12,6 +12,15 @@ import type { Product } from "@shared/api";
 
 type SortOption = "relevance" | "price-low" | "price-high" | "newest";
 
+const IMAGE_BASE_URL = "https://disruptinglabs.com/data/api";
+
+const getImageUrl = (imagePath: string | null | undefined): string => {
+  if (!imagePath)
+    return "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=400";
+  if (imagePath.startsWith("http")) return imagePath;
+  return `${IMAGE_BASE_URL}${imagePath}`;
+};
+
 const Catalogue = () => {
   const { state, actions } = useStore();
   const products = useProducts();
@@ -28,6 +37,8 @@ const Catalogue = () => {
   const [sortBy, setSortBy] = useState<SortOption>("relevance");
   const [addedProductId, setAddedProductId] = useState<number | null>(null);
 
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
   // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -37,6 +48,7 @@ const Catalogue = () => {
   useEffect(() => {
     actions.loadAllFilterOptions();
     actions.fetchProducts();
+    setIsInitialLoad(false);
   }, []);
 
   // Debug: log products state
@@ -44,9 +56,11 @@ const Catalogue = () => {
     console.log("Products state:", products);
   }, [products]);
 
-  // Refetch products when filters change
+  // Refetch products when filters change (skip initial load)
   useEffect(() => {
-    actions.fetchProducts();
+    if (!isInitialLoad) {
+      actions.fetchProducts();
+    }
   }, [products.filters]);
 
   const handleAddToQuote = (product: Product) => {
@@ -316,10 +330,7 @@ const Catalogue = () => {
                     <Link to={`/product/${product.id}`} className="block">
                       <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
                         <img
-                          src={
-                            product.thumbnail_url ||
-                            "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=400"
-                          }
+                          src={getImageUrl(product.main_image)}
                           alt={product.name}
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />

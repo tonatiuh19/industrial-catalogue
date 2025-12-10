@@ -70,6 +70,7 @@ export interface Product {
   price: number;
   currency: string;
   stock_quantity: number;
+  min_stock_level: number;
   unit: string;
   // Legacy text fields (keep for backward compatibility)
   manufacturer: string | null;
@@ -77,7 +78,8 @@ export interface Product {
   model: string | null;
   specifications: Record<string, any> | null;
   images: string[] | null;
-  thumbnail_url: string | null;
+  main_image: string | null;
+  extra_images: string | null;
   is_featured: boolean;
   is_active: boolean;
   meta_title: string | null;
@@ -85,6 +87,7 @@ export interface Product {
   created_at: string;
   updated_at: string;
   // Joined fields
+  category?: string;
   category_name?: string;
   manufacturer_name?: string;
   brand_name?: string;
@@ -150,7 +153,8 @@ export interface CreateProductRequest {
   model?: string;
   specifications?: Record<string, any>;
   images?: string[];
-  thumbnail_url?: string;
+  main_image?: string;
+  extra_images?: string;
   is_featured?: boolean;
   is_active?: boolean;
   meta_title?: string;

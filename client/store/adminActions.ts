@@ -21,7 +21,10 @@ export type AdminProductsAction =
   | { type: "ADMIN_PRODUCT_UPDATED"; payload: AdminProduct }
   | { type: "ADMIN_PRODUCT_DELETED"; payload: number }
   | { type: "ADMIN_PRODUCTS_ERROR"; payload: string }
-  | { type: "ADMIN_PRODUCTS_SET_PAGE"; payload: number };
+  | { type: "ADMIN_PRODUCTS_SET_PAGE"; payload: number }
+  | { type: "ADMIN_PRODUCT_IMAGES_LOADING"; payload?: string }
+  | { type: "ADMIN_PRODUCT_IMAGES_SUCCESS"; payload?: string }
+  | { type: "ADMIN_PRODUCT_IMAGES_ERROR"; payload: string };
 
 // Admin Quotes Actions
 export type AdminQuotesAction =

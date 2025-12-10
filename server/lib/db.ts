@@ -29,7 +29,7 @@ function getDbConfig(): DbConfig {
     connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || "10"),
     waitForConnections: true,
     queueLimit: 0,
-    connectTimeout: 60000, // 60 seconds
+    connectTimeout: 30000, // 30 seconds (reduced from 60)
   };
 
   console.log("DB Config:", {

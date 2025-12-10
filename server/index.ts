@@ -32,6 +32,10 @@ import {
   getContentPage,
   updateContentPage,
 } from "./routes/admin/content";
+import adminCategoriesRouter from "./routes/admin/categories";
+import adminManufacturersRouter from "./routes/admin/manufacturers";
+import adminBrandsRouter from "./routes/admin/brands";
+import adminModelsRouter from "./routes/admin/models";
 
 export function createServer() {
   const app = express();
@@ -70,6 +74,18 @@ export function createServer() {
   app.get("/api/admin/products/:id", getAdminProduct);
   app.put("/api/admin/products/:id", updateAdminProduct);
   app.delete("/api/admin/products/:id", deleteAdminProduct);
+
+  // Admin Categories routes
+  app.use("/api/admin/categories", adminCategoriesRouter);
+
+  // Admin Manufacturers routes
+  app.use("/api/admin/manufacturers", adminManufacturersRouter);
+
+  // Admin Brands routes
+  app.use("/api/admin/brands", adminBrandsRouter);
+
+  // Admin Models routes
+  app.use("/api/admin/models", adminModelsRouter);
 
   // Admin Quotes routes (proxies to /api folder for development)
   app.get("/api/admin/quotes", getAdminQuotes);

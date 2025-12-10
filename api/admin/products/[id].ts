@@ -70,7 +70,7 @@ async function handleGet(req: VercelRequest, res: VercelResponse, id: string) {
        LEFT JOIN categories c ON p.category_id = c.id
        LEFT JOIN brands b ON p.brand_id = b.id
        LEFT JOIN manufacturers m ON p.manufacturer_id = m.id
-       LEFT JOIN models md ON p.model_id = md.id
+       LEFT JOIN \`models\` md ON p.model_id = md.id
        WHERE p.id = ?`,
       [id],
     );
@@ -83,7 +83,9 @@ async function handleGet(req: VercelRequest, res: VercelResponse, id: string) {
 
     const product = {
       ...products[0],
+      model: products[0].model_name || products[0].model, // Use model_name from join, fallback to old model column
       images: products[0].images ? JSON.parse(products[0].images) : [],
+      extra_images: products[0].extra_images || null,
       specifications: products[0].specifications
         ? JSON.parse(products[0].specifications)
         : {},
@@ -109,6 +111,8 @@ async function handlePut(req: VercelRequest, res: VercelResponse, id: string) {
       brand_id,
       manufacturer_id,
       images,
+      main_image,
+      extra_images,
       specifications,
       is_active,
     } = req.body;
@@ -151,6 +155,14 @@ async function handlePut(req: VercelRequest, res: VercelResponse, id: string) {
     if (images !== undefined) {
       updates.push("images = ?");
       values.push(JSON.stringify(images));
+    }
+    if (main_image !== undefined) {
+      updates.push("main_image = ?");
+      values.push(main_image);
+    }
+    if (extra_images !== undefined) {
+      updates.push("extra_images = ?");
+      values.push(extra_images);
     }
     if (specifications !== undefined) {
       updates.push("specifications = ?");

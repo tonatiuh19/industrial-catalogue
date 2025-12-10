@@ -118,6 +118,8 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
         p.price,
         p.stock_quantity,
         p.images,
+        p.main_image,
+        p.extra_images,
         p.is_active,
         p.created_at,
         p.updated_at,
@@ -126,11 +128,14 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
         b.id as brand_id,
         b.name as brand,
         m.id as manufacturer_id,
-        m.name as manufacturer
+        m.name as manufacturer,
+        p.model_id,
+        mdl.name as model_name
        FROM products p
        LEFT JOIN categories c ON p.category_id = c.id
        LEFT JOIN brands b ON p.brand_id = b.id
        LEFT JOIN manufacturers m ON p.manufacturer_id = m.id
+       LEFT JOIN \`models\` mdl ON p.model_id = mdl.id
        ${whereClause}
        ORDER BY p.created_at DESC
        LIMIT ? OFFSET ?`,
@@ -142,7 +147,10 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
       data: {
         products: products.map((p: any) => ({
           ...p,
+          model: p.model_name || p.model, // Use model_name from join, fallback to old model column
           images: p.images ? JSON.parse(p.images) : [],
+          main_image: p.main_image || null,
+          extra_images: p.extra_images || null,
           is_active: Boolean(p.is_active),
         })),
         pagination: {
@@ -163,40 +171,48 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
   try {
     const {
       name,
+      sku,
       description,
-      model,
+      long_description,
+      model_id,
       price,
       stock_quantity,
+      min_stock_level,
       category_id,
       brand_id,
       manufacturer_id,
-      images,
+      main_image,
+      extra_images,
       specifications,
       is_active = true,
     } = req.body;
 
-    if (!name || !category_id) {
+    if (!name || !sku || !category_id) {
       return res.status(400).json({
         success: false,
-        message: "Name and category are required",
+        message: "Name, SKU, and category are required",
       });
     }
 
     const result = await query<any>(
       `INSERT INTO products (
-        name, description, model, price, stock_quantity,
-        category_id, brand_id, manufacturer_id, images, specifications, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        name, sku, description, long_description, model_id, price, stock_quantity, min_stock_level,
+        category_id, brand_id, manufacturer_id, main_image, extra_images, specifications, is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         name,
+        sku,
         description || null,
-        model || null,
+        long_description || null,
+        model_id || null,
         price || null,
         stock_quantity || 0,
+        min_stock_level || 0,
         category_id,
         brand_id || null,
         manufacturer_id || null,
-        images ? JSON.stringify(images) : null,
+        main_image || null,
+        extra_images || null,
         specifications ? JSON.stringify(specifications) : null,
         is_active ? 1 : 0,
       ],

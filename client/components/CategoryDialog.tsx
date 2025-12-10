@@ -57,6 +57,33 @@ export default function CategoryDialog({
     { setSubmitting }: FormikHelpers<CategoryFormValues>,
   ) => {
     try {
+      // Validate slug availability before creating (skip for edit mode)
+      if (!isEditMode) {
+        try {
+          const response = await categoriesApi.validateSlug(values.slug);
+          const data = response.data as {
+            success: boolean;
+            available?: boolean;
+            message?: string;
+          };
+
+          if (data.success && data.available === false) {
+            toast({
+              title: "Slug no disponible",
+              description:
+                "Este slug ya está en uso. Por favor elige otro nombre.",
+              variant: "destructive",
+            });
+            setSubmitting(false);
+            return;
+          }
+        } catch (slugError: any) {
+          console.error("Error validating slug:", slugError);
+          // If validation fails, allow creation to proceed (fail open)
+          // The backend will catch duplicate slug errors
+        }
+      }
+
       if (isEditMode && category) {
         await categoriesApi.update(category.id, values);
         toast({
@@ -73,11 +100,37 @@ export default function CategoryDialog({
       onSuccess();
       onClose();
     } catch (error: any) {
+      console.error("Category operation error:", error);
+
+      let errorMessage = `Error al ${isEditMode ? "actualizar" : "crear"} la categoría`;
+
+      // Handle specific error cases
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
+
+        if (status === 503) {
+          errorMessage =
+            "Error de conexión con la base de datos. Por favor intenta de nuevo.";
+        } else if (status === 504) {
+          errorMessage =
+            "La operación tardó demasiado. Por favor intenta de nuevo.";
+        } else if (status === 409) {
+          errorMessage = "Este slug ya existe. Por favor elige otro nombre.";
+        } else if (data?.message) {
+          errorMessage = data.message;
+        }
+      } else if (
+        error.code === "ECONNABORTED" ||
+        error.message?.includes("timeout")
+      ) {
+        errorMessage =
+          "Tiempo de espera agotado. Por favor verifica tu conexión.";
+      }
+
       toast({
         title: "Error",
-        description:
-          error.message ||
-          `Error al ${isEditMode ? "actualizar" : "crear"} la categoría`,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

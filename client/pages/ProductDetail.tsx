@@ -20,6 +20,15 @@ import { LoadingSpinner } from "@/components/LoadingMask";
 import { useQuote } from "@/context/QuoteContext";
 import { useStore } from "@/store/StoreContext";
 
+const IMAGE_BASE_URL = "https://disruptinglabs.com/data/api";
+
+const getImageUrl = (imagePath: string | null | undefined): string => {
+  if (!imagePath)
+    return "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800";
+  if (imagePath.startsWith("http")) return imagePath;
+  return `${IMAGE_BASE_URL}${imagePath}`;
+};
+
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -47,14 +56,47 @@ const ProductDetail = () => {
     }
   }, [id]);
 
-  const images =
-    product?.images && Array.isArray(product.images)
-      ? product.images
-      : product?.thumbnail_url
-        ? [product.thumbnail_url]
-        : [
-            "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800",
-          ];
+  const images = (() => {
+    const imageList: string[] = [];
+
+    // Add main image first
+    if (product?.main_image) {
+      imageList.push(getImageUrl(product.main_image));
+    }
+
+    // Add extra images
+    if (product?.extra_images) {
+      try {
+        const extraImgs =
+          typeof product.extra_images === "string"
+            ? JSON.parse(product.extra_images)
+            : product.extra_images;
+        if (Array.isArray(extraImgs)) {
+          imageList.push(...extraImgs.map((img) => getImageUrl(img)));
+        }
+      } catch (e) {
+        console.error("Error parsing extra_images:", e);
+      }
+    }
+
+    // Fallback to legacy images field
+    if (
+      imageList.length === 0 &&
+      product?.images &&
+      Array.isArray(product.images)
+    ) {
+      imageList.push(...product.images.map((img) => getImageUrl(img)));
+    }
+
+    // Final fallback to placeholder
+    if (imageList.length === 0) {
+      imageList.push(
+        "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800",
+      );
+    }
+
+    return imageList;
+  })();
 
   const handleAddToQuote = () => {
     if (product) {
@@ -130,7 +172,7 @@ const ProductDetail = () => {
           `${product.name} - ${product.manufacturer_name || ""} ${product.brand_name || ""}`
         }
         image={
-          product.thumbnail_url ||
+          product.main_image ||
           (product.images && Array.isArray(product.images)
             ? product.images[0]
             : undefined)

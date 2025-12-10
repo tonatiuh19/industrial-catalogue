@@ -8,6 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ImageUploadStep } from "@/components/ImageUploadStep";
+import { generateTempId } from "@/services/image-upload.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +38,7 @@ import {
   Factory,
   Layers,
   DollarSign,
+  Image as ImageIcon,
 } from "lucide-react";
 import { useAdminStore } from "@/store/AdminStoreContext";
 import { useToast } from "@/hooks/use-toast";
@@ -59,11 +62,43 @@ export default function ProductWizard({
     createAdminProduct,
     updateAdminProduct,
     fetchAllReferenceData,
+    uploadProductImages,
   } = useAdminStore();
   const { reference } = state;
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const isEditMode = !!product;
+
+  // Image management
+  const [productId, setProductId] = useState<string>(
+    product?.id ? String(product.id) : generateTempId(),
+  );
+  const [mainImage, setMainImage] = useState<string | null>(
+    product?.main_image || null,
+  );
+  const [extraImages, setExtraImages] = useState<string[]>(
+    product?.extra_images ? JSON.parse(product.extra_images) : [],
+  );
+  const [mainImageFile, setMainImageFile] = useState<File | null>(null);
+  const [extraImageFiles, setExtraImageFiles] = useState<File[]>([]);
+
+  useEffect(() => {
+    if (product?.id) {
+      setProductId(String(product.id));
+      setMainImage(product.main_image || null);
+      setExtraImages(
+        product.extra_images ? JSON.parse(product.extra_images) : [],
+      );
+      setMainImageFile(null);
+      setExtraImageFiles([]);
+    } else {
+      setProductId(generateTempId());
+      setMainImage(null);
+      setExtraImages([]);
+      setMainImageFile(null);
+      setExtraImageFiles([]);
+    }
+  }, [product]);
 
   const initialValues = {
     // Step 1: Basic Info
@@ -157,8 +192,49 @@ export default function ProductWizard({
 
   const handleSubmit = async (values: typeof initialValues) => {
     try {
+      let finalMainImage = mainImage;
+      let finalExtraImages = extraImages;
+
+      // Upload images if there are new files
+      if (mainImageFile || extraImageFiles.length > 0) {
+        try {
+          const result = await uploadProductImages(
+            productId,
+            mainImageFile || undefined,
+            extraImageFiles.length > 0 ? extraImageFiles : undefined,
+          );
+
+          if (!result.success) {
+            toast({
+              title: "Error",
+              description: result.error || "Error al subir las imágenes",
+              variant: "destructive",
+            });
+            return; // Stop here, don't create product
+          }
+
+          if (result.main_image) {
+            finalMainImage = result.main_image.path;
+          }
+          if (result.extra_images && result.extra_images.length > 0) {
+            const newPaths = result.extra_images.map((img) => img.path);
+            finalExtraImages = [...extraImages, ...newPaths];
+          }
+        } catch (uploadError: any) {
+          toast({
+            title: "Error al subir imágenes",
+            description: uploadError.message || "Error al subir las imágenes",
+            variant: "destructive",
+          });
+          return; // Stop here, don't create product
+        }
+      }
+
       const productData = {
-        ...values,
+        name: values.name,
+        sku: values.sku,
+        description: values.description,
+        long_description: values.long_description,
         price: parseFloat(values.price as any) || 0,
         stock_quantity: parseInt(values.stock_quantity as any) || 0,
         min_stock_level: parseInt(values.min_stock_level as any) || 0,
@@ -166,6 +242,10 @@ export default function ProductWizard({
         manufacturer_id: parseInt(values.manufacturer_id as any),
         brand_id: parseInt(values.brand_id as any),
         model_id: values.model_id ? parseInt(values.model_id as any) : null,
+        main_image: finalMainImage,
+        extra_images:
+          finalExtraImages.length > 0 ? JSON.stringify(finalExtraImages) : null,
+        is_active: values.is_active,
       };
 
       if (isEditMode && product) {
@@ -195,13 +275,14 @@ export default function ProductWizard({
     }
   };
 
-  const progress = (step / 4) * 100;
+  const progress = (step / 5) * 100;
 
   const steps = [
     { number: 1, title: "Información Básica", icon: Package },
     { number: 2, title: "Clasificación", icon: Tag },
     { number: 3, title: "Precios e Inventario", icon: DollarSign },
-    { number: 4, title: "Revisar y Enviar", icon: Check },
+    { number: 4, title: "Imágenes", icon: ImageIcon },
+    { number: 5, title: "Revisar y Enviar", icon: Check },
   ];
 
   return (
@@ -235,21 +316,55 @@ export default function ProductWizard({
                 )
               : reference.models;
 
-            const progress = (step / 4) * 100;
+            const progress = (step / 5) * 100;
 
             const steps = [
               { number: 1, title: "Información Básica", icon: Package },
               { number: 2, title: "Clasificación", icon: Tag },
               { number: 3, title: "Precios e Inventario", icon: DollarSign },
-              { number: 4, title: "Revisar y Enviar", icon: Check },
+              { number: 4, title: "Imágenes", icon: ImageIcon },
+              { number: 5, title: "Revisar y Enviar", icon: Check },
             ];
 
-            const handleNext = async () => {
-              const stepErrors = await validateForm();
-              const hasErrors = Object.keys(stepErrors).length > 0;
+            const handleNext = async (e?: React.MouseEvent) => {
+              e?.preventDefault();
+              e?.stopPropagation();
 
-              if (!hasErrors) {
-                setStep((prev) => Math.min(prev + 1, 4));
+              // Step 4 (images) doesn't need validation, skip to next
+              if (step === 4) {
+                setStep(step + 1);
+                return;
+              }
+
+              const stepErrors = await validateForm();
+
+              // Only check errors for fields in the current step
+              let hasStepErrors = false;
+
+              if (step === 1) {
+                hasStepErrors = [
+                  "name",
+                  "sku",
+                  "description",
+                  "long_description",
+                ].some((field) => stepErrors[field]);
+              } else if (step === 2) {
+                hasStepErrors = [
+                  "category_id",
+                  "manufacturer_id",
+                  "brand_id",
+                  "model_id",
+                ].some((field) => stepErrors[field]);
+              } else if (step === 3) {
+                hasStepErrors = [
+                  "price",
+                  "stock_quantity",
+                  "min_stock_level",
+                ].some((field) => stepErrors[field]);
+              }
+
+              if (!hasStepErrors) {
+                setStep((prev) => Math.min(prev + 1, 5));
               } else {
                 toast({
                   title: "Error de Validación",
@@ -265,7 +380,14 @@ export default function ProductWizard({
             };
 
             return (
-              <Form>
+              <Form
+                onKeyDown={(e) => {
+                  // Prevent Enter key from submitting the form
+                  if (e.key === "Enter" && step !== 5) {
+                    e.preventDefault();
+                  }
+                }}
+              >
                 <DialogHeader className="pb-4">
                   <DialogTitle>
                     {isEditMode ? "Editar Producto" : "Agregar Nuevo Producto"}
@@ -651,8 +773,23 @@ export default function ProductWizard({
                   </Card>
                 )}
 
-                {/* Step 4: Review & Submit */}
+                {/* Step 4: Images */}
                 {step === 4 && (
+                  <ImageUploadStep
+                    productId={productId}
+                    mainImage={mainImage}
+                    extraImages={extraImages}
+                    mainImageFile={mainImageFile}
+                    extraImageFiles={extraImageFiles}
+                    onMainImageChange={setMainImage}
+                    onExtraImagesChange={setExtraImages}
+                    onMainImageFileChange={setMainImageFile}
+                    onExtraImageFilesChange={setExtraImageFiles}
+                  />
+                )}
+
+                {/* Step 5: Review & Submit */}
+                {step === 5 && (
                   <Card>
                     <CardHeader className="pb-3">
                       <CardTitle className="flex items-center gap-2">
@@ -750,6 +887,96 @@ export default function ProductWizard({
                             )}
                           </div>
                         </div>
+
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Estado
+                          </p>
+                          <div className="mt-2 space-y-2 border-l-2 pl-4">
+                            <div className="flex items-center gap-2">
+                              <Label
+                                htmlFor="is_active"
+                                className="flex items-center gap-2 cursor-pointer"
+                              >
+                                <Field name="is_active">
+                                  {({ field }: any) => (
+                                    <input
+                                      {...field}
+                                      id="is_active"
+                                      type="checkbox"
+                                      checked={field.value}
+                                      className="w-4 h-4 cursor-pointer"
+                                    />
+                                  )}
+                                </Field>
+                                <span>
+                                  <strong>Producto Activo:</strong>{" "}
+                                  {values.is_active ? "Sí" : "No"}
+                                </span>
+                              </Label>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {values.is_active
+                                ? "El producto será visible en el catálogo"
+                                : "El producto estará oculto y no se mostrará en el catálogo"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Imágenes
+                          </p>
+                          <div className="mt-2 space-y-2 border-l-2 pl-4">
+                            {mainImageFile || mainImage ? (
+                              <div>
+                                <p className="text-sm mb-1">
+                                  <strong>Imagen Principal:</strong>
+                                </p>
+                                <img
+                                  src={
+                                    mainImageFile
+                                      ? URL.createObjectURL(mainImageFile)
+                                      : `https://disruptinglabs.com${mainImage}`
+                                  }
+                                  alt="Imagen principal"
+                                  className="w-32 h-32 object-cover rounded border"
+                                />
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                Sin imagen principal
+                              </p>
+                            )}
+                            {(extraImageFiles.length > 0 ||
+                              extraImages.length > 0) && (
+                              <div>
+                                <p className="text-sm mb-1">
+                                  <strong>Imágenes Adicionales:</strong>{" "}
+                                  {extraImageFiles.length + extraImages.length}
+                                </p>
+                                <div className="flex gap-2 flex-wrap">
+                                  {extraImageFiles.map((file, idx) => (
+                                    <img
+                                      key={`file-${idx}`}
+                                      src={URL.createObjectURL(file)}
+                                      alt={`Imagen ${idx + 1}`}
+                                      className="w-20 h-20 object-cover rounded border"
+                                    />
+                                  ))}
+                                  {extraImages.map((img, idx) => (
+                                    <img
+                                      key={`path-${idx}`}
+                                      src={`https://disruptinglabs.com${img}`}
+                                      alt={`Imagen ${extraImageFiles.length + idx + 1}`}
+                                      className="w-20 h-20 object-cover rounded border"
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -777,7 +1004,7 @@ export default function ProductWizard({
                       Cancelar
                     </Button>
 
-                    {step < 4 ? (
+                    {step < 5 ? (
                       <Button type="button" onClick={handleNext}>
                         Siguiente
                         <ChevronRight className="h-4 w-4 ml-1" />

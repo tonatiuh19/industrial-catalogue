@@ -106,6 +106,30 @@ const adminProductsReducer = (
         },
       };
 
+    case "ADMIN_PRODUCT_IMAGES_LOADING":
+      return {
+        ...state,
+        loading: {
+          isLoading: true,
+          loadingMessage: action.payload || "Uploading images...",
+        },
+        error: { hasError: false },
+      };
+
+    case "ADMIN_PRODUCT_IMAGES_SUCCESS":
+      return {
+        ...state,
+        loading: { isLoading: false },
+        error: { hasError: false },
+      };
+
+    case "ADMIN_PRODUCT_IMAGES_ERROR":
+      return {
+        ...state,
+        loading: { isLoading: false },
+        error: { hasError: true, errorMessage: action.payload },
+      };
+
     default:
       return state;
   }

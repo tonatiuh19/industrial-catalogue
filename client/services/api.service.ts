@@ -66,7 +66,7 @@ export const categoriesApi = {
     return httpClient.get<CategoryListResponse>(`/categories${params}`);
   },
   create: (data: { name: string; slug: string; description?: string }) => {
-    return httpClient.post("/categories", data);
+    return httpClient.post("/admin/categories", data);
   },
   update: (
     id: number,
@@ -77,10 +77,10 @@ export const categoriesApi = {
       is_active?: boolean;
     },
   ) => {
-    return httpClient.put<ApiResponse>(`/categories/${id}`, data);
+    return httpClient.put<ApiResponse>(`/admin/categories/${id}`, data);
   },
   delete: (id: number) => {
-    return httpClient.delete<ApiResponse>(`/categories/${id}`);
+    return httpClient.delete<ApiResponse>(`/admin/categories/${id}`);
   },
   validateSlug: (slug: string) => {
     return httpClient.get<{ available: boolean }>(
@@ -96,7 +96,7 @@ export const manufacturersApi = {
     return httpClient.get<ManufacturerListResponse>(`/manufacturers${params}`);
   },
   create: (data: { name: string; description?: string; website?: string }) => {
-    return httpClient.post("/manufacturers", data);
+    return httpClient.post("/admin/manufacturers", data);
   },
   update: (
     id: number,
@@ -107,10 +107,10 @@ export const manufacturersApi = {
       is_active?: boolean;
     },
   ) => {
-    return httpClient.put<ApiResponse>(`/manufacturers/${id}`, data);
+    return httpClient.put<ApiResponse>(`/admin/manufacturers/${id}`, data);
   },
   delete: (id: number) => {
-    return httpClient.delete<ApiResponse>(`/manufacturers/${id}`);
+    return httpClient.delete<ApiResponse>(`/admin/manufacturers/${id}`);
   },
 };
 
@@ -136,7 +136,7 @@ export const brandsApi = {
     manufacturer_id: number;
     description?: string;
   }) => {
-    return httpClient.post("/brands", data);
+    return httpClient.post("/admin/brands", data);
   },
   update: (
     id: number,
@@ -147,10 +147,10 @@ export const brandsApi = {
       is_active?: boolean;
     },
   ) => {
-    return httpClient.put<ApiResponse>(`/brands/${id}`, data);
+    return httpClient.put<ApiResponse>(`/admin/brands/${id}`, data);
   },
   delete: (id: number) => {
-    return httpClient.delete<ApiResponse>(`/brands/${id}`);
+    return httpClient.delete<ApiResponse>(`/admin/brands/${id}`);
   },
 };
 
@@ -169,7 +169,7 @@ export const modelsApi = {
     );
   },
   create: (data: { name: string; brand_id: number; description?: string }) => {
-    return httpClient.post("/models", data);
+    return httpClient.post("/admin/models", data);
   },
   update: (
     id: number,
@@ -180,10 +180,10 @@ export const modelsApi = {
       is_active?: boolean;
     },
   ) => {
-    return httpClient.put<ApiResponse>(`/models/${id}`, data);
+    return httpClient.put<ApiResponse>(`/admin/models/${id}`, data);
   },
   delete: (id: number) => {
-    return httpClient.delete<ApiResponse>(`/models/${id}`);
+    return httpClient.delete<ApiResponse>(`/admin/models/${id}`);
   },
 };
 
