@@ -759,6 +759,428 @@ const deleteCategory: RequestHandler = async (req, res) => {
   }
 };
 
+// ==================== ADMIN MANUFACTURERS ====================
+const createManufacturer: RequestHandler = async (req, res) => {
+  try {
+    const { name, description, website, logo_url } = req.body;
+
+    if (!name) {
+      return res.status(400).json({
+        success: false,
+        message: "Name is required",
+      });
+    }
+
+    const [result] = await pool.execute(
+      `INSERT INTO manufacturers (name, description, website, logo_url, is_active) 
+       VALUES (?, ?, ?, ?, 1)`,
+      [name, description || null, website || null, logo_url || null],
+    );
+
+    const insertId = (result as any).insertId;
+
+    res.status(201).json({
+      success: true,
+      data: { id: insertId },
+    });
+  } catch (error: any) {
+    console.error("Error creating manufacturer:", error);
+
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
+        success: false,
+        message: "A manufacturer with this name already exists",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const updateManufacturer: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, website, logo_url, is_active } = req.body;
+
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (name !== undefined) {
+      updates.push("name = ?");
+      values.push(name);
+    }
+    if (description !== undefined) {
+      updates.push("description = ?");
+      values.push(description);
+    }
+    if (website !== undefined) {
+      updates.push("website = ?");
+      values.push(website);
+    }
+    if (logo_url !== undefined) {
+      updates.push("logo_url = ?");
+      values.push(logo_url);
+    }
+    if (is_active !== undefined) {
+      updates.push("is_active = ?");
+      values.push(is_active ? 1 : 0);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No fields to update",
+      });
+    }
+
+    values.push(parseInt(id));
+
+    const [result] = await pool.execute(
+      `UPDATE manufacturers SET ${updates.join(", ")} WHERE id = ?`,
+      values,
+    );
+
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Manufacturer not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Manufacturer updated successfully",
+    });
+  } catch (error: any) {
+    console.error("Error updating manufacturer:", error);
+
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
+        success: false,
+        message: "A manufacturer with this name already exists",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const deleteManufacturer: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [result] = await pool.execute(
+      "DELETE FROM manufacturers WHERE id = ?",
+      [parseInt(id)],
+    );
+
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Manufacturer not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Manufacturer deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting manufacturer:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// ==================== ADMIN BRANDS ====================
+const createBrand: RequestHandler = async (req, res) => {
+  try {
+    const { name, manufacturer_id, description, logo_url } = req.body;
+
+    if (!name || !manufacturer_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Name and manufacturer_id are required",
+      });
+    }
+
+    const [result] = await pool.execute(
+      `INSERT INTO brands (name, manufacturer_id, description, logo_url, is_active) 
+       VALUES (?, ?, ?, ?, 1)`,
+      [name, manufacturer_id, description || null, logo_url || null],
+    );
+
+    const insertId = (result as any).insertId;
+
+    res.status(201).json({
+      success: true,
+      data: { id: insertId },
+    });
+  } catch (error: any) {
+    console.error("Error creating brand:", error);
+
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
+        success: false,
+        message: "A brand with this name already exists",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const updateBrand: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, manufacturer_id, description, logo_url, is_active } =
+      req.body;
+
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (name !== undefined) {
+      updates.push("name = ?");
+      values.push(name);
+    }
+    if (manufacturer_id !== undefined) {
+      updates.push("manufacturer_id = ?");
+      values.push(manufacturer_id);
+    }
+    if (description !== undefined) {
+      updates.push("description = ?");
+      values.push(description);
+    }
+    if (logo_url !== undefined) {
+      updates.push("logo_url = ?");
+      values.push(logo_url);
+    }
+    if (is_active !== undefined) {
+      updates.push("is_active = ?");
+      values.push(is_active ? 1 : 0);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No fields to update",
+      });
+    }
+
+    values.push(parseInt(id));
+
+    const [result] = await pool.execute(
+      `UPDATE brands SET ${updates.join(", ")} WHERE id = ?`,
+      values,
+    );
+
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Brand not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Brand updated successfully",
+    });
+  } catch (error: any) {
+    console.error("Error updating brand:", error);
+
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
+        success: false,
+        message: "A brand with this name already exists",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const deleteBrand: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [result] = await pool.execute("DELETE FROM brands WHERE id = ?", [
+      parseInt(id),
+    ]);
+
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Brand not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Brand deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting brand:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// ==================== ADMIN MODELS ====================
+const createModel: RequestHandler = async (req, res) => {
+  try {
+    const { name, brand_id, description, specifications } = req.body;
+
+    if (!name || !brand_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Name and brand_id are required",
+      });
+    }
+
+    const [result] = await pool.execute(
+      `INSERT INTO models (name, brand_id, description, specifications, is_active) 
+       VALUES (?, ?, ?, ?, 1)`,
+      [name, brand_id, description || null, specifications || null],
+    );
+
+    const insertId = (result as any).insertId;
+
+    res.status(201).json({
+      success: true,
+      data: { id: insertId },
+    });
+  } catch (error: any) {
+    console.error("Error creating model:", error);
+
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
+        success: false,
+        message: "A model with this name already exists",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const updateModel: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, brand_id, description, specifications, is_active } = req.body;
+
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (name !== undefined) {
+      updates.push("name = ?");
+      values.push(name);
+    }
+    if (brand_id !== undefined) {
+      updates.push("brand_id = ?");
+      values.push(brand_id);
+    }
+    if (description !== undefined) {
+      updates.push("description = ?");
+      values.push(description);
+    }
+    if (specifications !== undefined) {
+      updates.push("specifications = ?");
+      values.push(specifications);
+    }
+    if (is_active !== undefined) {
+      updates.push("is_active = ?");
+      values.push(is_active ? 1 : 0);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No fields to update",
+      });
+    }
+
+    values.push(parseInt(id));
+
+    const [result] = await pool.execute(
+      `UPDATE models SET ${updates.join(", ")} WHERE id = ?`,
+      values,
+    );
+
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Model not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Model updated successfully",
+    });
+  } catch (error: any) {
+    console.error("Error updating model:", error);
+
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
+        success: false,
+        message: "A model with this name already exists",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const deleteModel: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [result] = await pool.execute("DELETE FROM models WHERE id = ?", [
+      parseInt(id),
+    ]);
+
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Model not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Model deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting model:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 // ==================== ADMIN PRODUCTS ====================
 const createProduct: RequestHandler = async (req, res) => {
   try {
@@ -1816,6 +2238,24 @@ function createServer() {
   expressApp.post("/api/admin/categories", createCategory);
   expressApp.put("/api/admin/categories/:id", updateCategory);
   expressApp.delete("/api/admin/categories/:id", deleteCategory);
+
+  // Admin Manufacturers (protected)
+  expressApp.get("/api/admin/manufacturers", getManufacturers);
+  expressApp.post("/api/admin/manufacturers", createManufacturer);
+  expressApp.put("/api/admin/manufacturers/:id", updateManufacturer);
+  expressApp.delete("/api/admin/manufacturers/:id", deleteManufacturer);
+
+  // Admin Brands (protected)
+  expressApp.get("/api/admin/brands", getBrands);
+  expressApp.post("/api/admin/brands", createBrand);
+  expressApp.put("/api/admin/brands/:id", updateBrand);
+  expressApp.delete("/api/admin/brands/:id", deleteBrand);
+
+  // Admin Models (protected)
+  expressApp.get("/api/admin/models", getModels);
+  expressApp.post("/api/admin/models", createModel);
+  expressApp.put("/api/admin/models/:id", updateModel);
+  expressApp.delete("/api/admin/models/:id", deleteModel);
 
   // Admin Products (protected)
   expressApp.get("/api/admin/products", getProducts);
