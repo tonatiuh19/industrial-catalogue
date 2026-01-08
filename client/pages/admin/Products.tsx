@@ -450,10 +450,10 @@ export default function Products() {
   const filteredProducts = productsState.products.filter(
     (product) =>
       product.name?.toLowerCase().includes(search.toLowerCase()) ||
-      (product.brand &&
-        product.brand?.toLowerCase().includes(search.toLowerCase())) ||
-      (product.category &&
-        product.category?.toLowerCase().includes(search.toLowerCase())),
+      (product.brand_name &&
+        product.brand_name?.toLowerCase().includes(search.toLowerCase())) ||
+      (product.category_name &&
+        product.category_name?.toLowerCase().includes(search.toLowerCase())),
   );
 
   const filteredCategories = reference.categories.filter((cat) =>
@@ -566,9 +566,9 @@ export default function Products() {
                         <TableCell className="font-medium">
                           {product.name}
                         </TableCell>
-                        <TableCell>{product.brand || "-"}</TableCell>
-                        <TableCell>{product.category || "-"}</TableCell>
-                        <TableCell>{product.model}</TableCell>
+                        <TableCell>{product.brand_name || "-"}</TableCell>
+                        <TableCell>{product.category_name || "-"}</TableCell>
+                        <TableCell>{product.model_name || "-"}</TableCell>
                         <TableCell>
                           <Badge
                             variant={
@@ -1094,6 +1094,7 @@ export default function Products() {
         }}
         onSuccess={() => {
           loadProducts();
+          setShowWizard(false);
           setEditingProduct(null);
         }}
         product={editingProduct}

@@ -10,16 +10,16 @@ export const adminAuthApi = {
     });
     return response.data;
   },
-  sendCode: async (user_id: number, email: string) => {
+  sendCode: async (admin_id: number, email: string) => {
     const response = await axios.post(`${API_BASE_URL}/auth/send-code`, {
-      user_id,
+      admin_id,
       email,
     });
     return response.data;
   },
-  verifyCode: async (user_id: number, code: string) => {
+  verifyCode: async (admin_id: number, code: string) => {
     const response = await axios.post(`${API_BASE_URL}/auth/verify-code`, {
-      user_id,
+      admin_id,
       code,
     });
     return response.data;

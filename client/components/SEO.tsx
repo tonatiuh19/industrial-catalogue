@@ -10,6 +10,7 @@ interface SEOProps {
   currency?: string;
   availability?: "in stock" | "out of stock";
   sku?: string;
+  noindex?: boolean;
 }
 
 const SEO = ({
@@ -22,6 +23,7 @@ const SEO = ({
   currency = "MXN",
   availability = "in stock",
   sku,
+  noindex = false,
 }: SEOProps) => {
   const siteName = "Industrial";
   const fullTitle = title.includes(siteName) ? title : `${title} | ${siteName}`;
@@ -69,7 +71,10 @@ const SEO = ({
       )}
 
       {/* Additional SEO */}
-      <meta name="robots" content="index, follow" />
+      <meta
+        name="robots"
+        content={noindex ? "noindex, nofollow" : "index, follow"}
+      />
       <meta name="language" content="Spanish" />
       <meta name="author" content="Industrial" />
     </Helmet>

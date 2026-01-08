@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAdminStore } from "@/store/AdminStoreContext";
+import { useAdmin } from "@/context/AdminContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Save, Loader2 } from "lucide-react";
+import { Save, Loader2, ShieldAlert } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 export default function ContentPages() {
+  const { admin } = useAdmin();
+  const navigate = useNavigate();
   const { state, fetchContentPages, updateContentPage } = useAdminStore();
   const { content: contentState } = state;
   const { toast } = useToast();
@@ -16,8 +20,18 @@ export default function ContentPages() {
   const [activeTab, setActiveTab] = useState("terms");
 
   useEffect(() => {
+    // Check if user has permission to access this page
+    if (admin?.role !== "super_admin") {
+      toast({
+        title: "Acceso Denegado",
+        description: "No tienes permisos para acceder a esta página",
+        variant: "destructive",
+      });
+      navigate("/admin/dashboard");
+      return;
+    }
     loadPages();
-  }, []);
+  }, [admin]);
 
   useEffect(() => {
     // Update local state when pages are loaded
@@ -59,6 +73,25 @@ export default function ContentPages() {
       });
     }
   };
+
+  // Additional safety check
+  if (admin?.role !== "super_admin") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <ShieldAlert className="h-16 w-16 text-slate-400" />
+        <h2 className="text-2xl font-semibold text-slate-700">
+          Acceso Denegado
+        </h2>
+        <p className="text-slate-600 text-center max-w-md">
+          No tienes permisos para acceder a esta página. Solo los Super
+          Administradores pueden gestionar el contenido.
+        </p>
+        <Button onClick={() => navigate("/admin/dashboard")}>
+          Volver al Tablero
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -89,10 +89,9 @@ export const AdminStoreProvider: React.FC<{ children: React.ReactNode }> = ({
       const response = await adminProductsApi.getAll({ page, limit });
       console.log("Admin products API response:", response);
 
-      // Handle both wrapped and unwrapped responses
-      const products = response.data?.products || response.products || [];
-      const total =
-        response.data?.pagination?.total || response.pagination?.total || 0;
+      // Handle API response structure: { success: true, data: [...products], pagination: {...} }
+      const products = Array.isArray(response.data) ? response.data : [];
+      const total = response.pagination?.total || 0;
 
       dispatch({
         type: "ADMIN_PRODUCTS_SUCCESS",

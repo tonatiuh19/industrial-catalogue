@@ -9,9 +9,9 @@ export interface AdminProduct {
   category_id: number;
   brand_id: number;
   manufacturer_id: number;
-  category?: string;
-  brand?: string;
-  manufacturer?: string;
+  category_name?: string;
+  brand_name?: string;
+  manufacturer_name?: string;
   model_name?: string;
   images?: string[];
   specifications?: any;

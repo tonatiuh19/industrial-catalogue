@@ -1,5 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAdminStore } from "@/store/AdminStoreContext";
+import { useAdmin } from "@/context/AdminContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -11,17 +13,33 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, Loader2, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import UserWizard from "@/components/UserWizard";
+import type { AdminUser } from "@/store/adminState";
 
 export default function Users() {
+  const { admin } = useAdmin();
+  const navigate = useNavigate();
   const { state, fetchAdminUsers, deleteAdminUser } = useAdminStore();
   const { users: usersState } = state;
   const { toast } = useToast();
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
 
   useEffect(() => {
+    // Check if user has permission to access this page
+    if (admin?.role !== "super_admin") {
+      toast({
+        title: "Acceso Denegado",
+        description: "No tienes permisos para acceder a esta página",
+        variant: "destructive",
+      });
+      navigate("/admin/dashboard");
+      return;
+    }
     loadUsers();
-  }, []);
+  }, [admin]);
 
   const loadUsers = async () => {
     try {
@@ -53,6 +71,44 @@ export default function Users() {
     }
   };
 
+  const handleAddUser = () => {
+    setSelectedUser(null);
+    setWizardOpen(true);
+  };
+
+  const handleEditUser = (user: AdminUser) => {
+    setSelectedUser(user);
+    setWizardOpen(true);
+  };
+
+  const handleWizardClose = () => {
+    setWizardOpen(false);
+    setSelectedUser(null);
+  };
+
+  const handleWizardSuccess = () => {
+    loadUsers();
+  };
+
+  // Additional safety check
+  if (admin?.role !== "super_admin") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <ShieldAlert className="h-16 w-16 text-slate-400" />
+        <h2 className="text-2xl font-semibold text-slate-700">
+          Acceso Denegado
+        </h2>
+        <p className="text-slate-600 text-center max-w-md">
+          No tienes permisos para acceder a esta página. Solo los Super
+          Administradores pueden gestionar usuarios.
+        </p>
+        <Button onClick={() => navigate("/admin/dashboard")}>
+          Volver al Tablero
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -62,11 +118,18 @@ export default function Users() {
           </h1>
           <p className="text-slate-600">Administrar cuentas de administrador</p>
         </div>
-        <Button>
+        <Button onClick={handleAddUser}>
           <Plus className="mr-2 h-4 w-4" />
           Agregar Usuario
         </Button>
       </div>
+
+      <UserWizard
+        open={wizardOpen}
+        onClose={handleWizardClose}
+        onSuccess={handleWizardSuccess}
+        user={selectedUser}
+      />
 
       <Card>
         <CardHeader>
@@ -123,7 +186,11 @@ export default function Users() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditUser(user)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button

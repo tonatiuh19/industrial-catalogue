@@ -3,6 +3,7 @@ import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAdmin } from "@/context/AdminContext";
 import { AdminStoreProvider } from "@/store/AdminStoreContext";
 import { Button } from "@/components/ui/button";
+import SEO from "@/components/SEO";
 import {
   LayoutDashboard,
   Package,
@@ -17,12 +18,42 @@ import {
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Tablero", href: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "Productos", href: "/admin/products", icon: Package },
-  { name: "Cotizaciones", href: "/admin/quotes", icon: FileText },
-  { name: "Usuarios", href: "/admin/users", icon: Users },
-  { name: "Páginas de Contenido", href: "/admin/content", icon: FileText },
-  { name: "Configuración", href: "/admin/settings", icon: Settings },
+  {
+    name: "Tablero",
+    href: "/admin/dashboard",
+    icon: LayoutDashboard,
+    roles: ["admin", "super_admin"],
+  },
+  {
+    name: "Productos",
+    href: "/admin/products",
+    icon: Package,
+    roles: ["admin", "super_admin"],
+  },
+  {
+    name: "Cotizaciones",
+    href: "/admin/quotes",
+    icon: FileText,
+    roles: ["admin", "super_admin"],
+  },
+  {
+    name: "Usuarios",
+    href: "/admin/users",
+    icon: Users,
+    roles: ["super_admin"],
+  },
+  {
+    name: "Páginas de Contenido",
+    href: "/admin/content",
+    icon: FileText,
+    roles: ["super_admin"],
+  },
+  {
+    name: "Configuración",
+    href: "/admin/settings",
+    icon: Settings,
+    roles: ["super_admin"],
+  },
 ];
 
 export default function AdminDashboard() {
@@ -59,6 +90,11 @@ export default function AdminDashboard() {
 
   return (
     <AdminStoreProvider>
+      <SEO
+        title="Panel de Administración | Industrial Catalogue"
+        description="Panel de administración para gestionar productos, cotizaciones, usuarios y configuraciones del catálogo industrial."
+        noindex={true}
+      />
       <div className="min-h-screen bg-slate-50">
         {/* Mobile sidebar backdrop */}
         {sidebarOpen && (
@@ -93,28 +129,30 @@ export default function AdminDashboard() {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-1">
-            {navigation.map((item) => {
-              const isActive =
-                location.pathname === item.href ||
-                (item.href !== "/admin/dashboard" &&
-                  location.pathname.startsWith(item.href));
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-accent/10 text-accent"
-                      : "text-slate-700 hover:bg-slate-100",
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
+            {navigation
+              .filter((item) => item.roles.includes(admin.role))
+              .map((item) => {
+                const isActive =
+                  location.pathname === item.href ||
+                  (item.href !== "/admin/dashboard" &&
+                    location.pathname.startsWith(item.href));
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={cn(
+                      "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-accent/10 text-accent"
+                        : "text-slate-700 hover:bg-slate-100",
+                    )}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
           </nav>
 
           {/* User info & logout */}

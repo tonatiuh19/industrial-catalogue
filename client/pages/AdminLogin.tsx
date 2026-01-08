@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import SEO from "@/components/SEO";
 import {
   Card,
   CardContent,
@@ -94,6 +95,11 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen h-screen overflow-hidden flex">
+      <SEO
+        title="Inicio de Sesión | Panel de Administración"
+        description="Acceso seguro al panel de administración del catálogo industrial."
+        noindex={true}
+      />
       {/* Left Column - Colored Background with Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-[#9e4629] to-accent relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
