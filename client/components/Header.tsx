@@ -39,11 +39,7 @@ const Header = () => {
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
             <img
-              src={
-                !isScrolled
-                  ? "https://disruptinglabs.com/data/trenor/assets/images/logo_dark_trenor.png"
-                  : "https://disruptinglabs.com/data/trenor/assets/images/logo_white_trenor.png"
-              }
+              src="https://disruptinglabs.com/data/trenor/assets/images/logo_dark_trenor.png"
               alt="Trenor Logo"
               className="h-8 w-auto object-contain transition-opacity duration-300"
             />
@@ -52,23 +48,23 @@ const Header = () => {
           {/* Search bar - hidden on mobile */}
           <div className="hidden md:flex flex-1 mx-8 max-w-md">
             <div className="relative w-full group">
-              <input
+              {/* <input
                 type="text"
                 placeholder="Buscar productos..."
                 className="w-full px-4 py-2.5 border border-steel-200 bg-steel-50 text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent rounded-lg transition-all duration-200 group-hover:border-steel-300"
               />
               <button className="absolute right-3 top-1/2 -translate-y-1/2 text-steel-400 hover:text-accent transition-colors">
                 <Search size={18} />
-              </button>
+              </button> */}
             </div>
           </div>
 
           {/* Right actions */}
           <div className="flex items-center gap-4">
             {/* Mobile search button */}
-            <button className="md:hidden text-steel-600 hover:text-accent transition-colors">
+            {/* <button className="md:hidden text-steel-600 hover:text-accent transition-colors">
               <Search size={20} />
-            </button>
+            </button> */}
 
             {/* Menu toggle for mobile */}
             <button
@@ -86,14 +82,14 @@ const Header = () => {
             {/* Mobile search */}
             <div className="px-4 py-4 sm:px-6">
               <div className="relative group">
-                <input
+                {/* <input
                   type="text"
                   placeholder="Buscar productos..."
                   className="w-full px-4 py-2.5 border border-steel-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent rounded-lg transition-all duration-200 group-hover:border-steel-300"
                 />
                 <button className="absolute right-3 top-1/2 -translate-y-1/2 text-steel-400 hover:text-accent transition-colors">
                   <Search size={18} />
-                </button>
+                </button> */}
               </div>
             </div>
 
