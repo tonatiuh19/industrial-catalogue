@@ -25,7 +25,7 @@ const navigation = [
     roles: ["admin", "super_admin"],
   },
   {
-    name: "Productos",
+    name: "Catálogo",
     href: "/admin/products",
     icon: Package,
     roles: ["admin", "super_admin"],
@@ -112,12 +112,13 @@ export default function AdminDashboard() {
           )}
         >
           {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200 bg-gradient-to-r from-primary to-accent">
+          <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200 bg-white">
             <div className="flex items-center space-x-2">
-              <ShieldCheck className="h-6 w-6 text-white" />
-              <span className="text-lg font-semibold text-white">
-                Admin Panel
-              </span>
+              <img
+                src="https://disruptinglabs.com/data/trenor/assets/images/logo_dark_trenor.png"
+                alt="Trenor Logo"
+                className="h-8 w-auto object-contain"
+              />
             </div>
             <button
               onClick={() => setSidebarOpen(false)}

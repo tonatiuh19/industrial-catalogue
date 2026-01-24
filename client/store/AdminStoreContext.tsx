@@ -13,6 +13,7 @@ import {
   manufacturersApi,
   brandsApi,
   modelsApi,
+  subcategoriesApi,
 } from "@/services/api.service";
 import { uploadImages, deleteImage } from "@/services/image-upload.service";
 
@@ -64,6 +65,7 @@ interface AdminStoreContextType {
 
   // Reference Data Actions
   fetchCategories: () => Promise<void>;
+  fetchSubcategories: () => Promise<void>;
   fetchManufacturers: () => Promise<void>;
   fetchBrands: (manufacturerId?: number) => Promise<void>;
   fetchModels: (brandId?: number) => Promise<void>;
@@ -443,6 +445,33 @@ export const AdminStoreProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const fetchSubcategories = async () => {
+    try {
+      dispatch({
+        type: "ADMIN_REFERENCE_LOADING",
+        payload: "Loading subcategories...",
+      });
+      const response = await subcategoriesApi.getAll({
+        include_inactive: true,
+      });
+      console.log("Subcategories API response:", response);
+      const subcategories = Array.isArray(response.data.data)
+        ? response.data.data
+        : Array.isArray(response.data)
+          ? response.data
+          : [];
+      console.log("Extracted subcategories:", subcategories);
+      dispatch({ type: "ADMIN_SUBCATEGORIES_SUCCESS", payload: subcategories });
+    } catch (error: any) {
+      console.error("Subcategories fetch error:", error);
+      dispatch({
+        type: "ADMIN_REFERENCE_ERROR",
+        payload: error.message || "Failed to fetch subcategories",
+      });
+      throw error;
+    }
+  };
+
   const fetchManufacturers = async () => {
     try {
       dispatch({
@@ -515,6 +544,7 @@ export const AdminStoreProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       await Promise.all([
         fetchCategories(),
+        fetchSubcategories(),
         fetchManufacturers(),
         fetchBrands(),
         fetchModels(),
@@ -546,6 +576,7 @@ export const AdminStoreProvider: React.FC<{ children: React.ReactNode }> = ({
     fetchContentPage,
     updateContentPage,
     fetchCategories,
+    fetchSubcategories,
     fetchManufacturers,
     fetchBrands,
     fetchModels,

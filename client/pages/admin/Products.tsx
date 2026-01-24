@@ -28,9 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductWizard from "@/components/ProductWizard";
-import CategoryDialog from "@/components/CategoryDialog";
-import ManufacturerDialog from "@/components/ManufacturerDialog";
-import BrandDialog from "@/components/BrandDialog";
+import ReferenceDataWizard from "@/components/ReferenceDataWizard";
 import ModelDialog from "@/components/ModelDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import {
@@ -38,7 +36,9 @@ import {
   manufacturersApi,
   brandsApi,
   modelsApi,
+  subcategoriesApi,
 } from "@/services/api.service";
+import { getImageUrl } from "@/services/image-upload.service";
 
 export default function Products() {
   const {
@@ -51,15 +51,14 @@ export default function Products() {
   const { products: productsState, reference } = state;
   const { toast } = useToast();
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState("products");
+  const [activeTab, setActiveTab] = useState("categories");
   const [showWizard, setShowWizard] = useState(false);
-  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
-  const [showManufacturerDialog, setShowManufacturerDialog] = useState(false);
-  const [showBrandDialog, setShowBrandDialog] = useState(false);
+  const [showReferenceDialog, setShowReferenceDialog] = useState(false);
+  const [referenceDialogType, setReferenceDialogType] = useState<
+    "category" | "manufacturer" | "brand" | "subcategory"
+  >("category");
   const [showModelDialog, setShowModelDialog] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<any>(null);
-  const [editingManufacturer, setEditingManufacturer] = useState<any>(null);
-  const [editingBrand, setEditingBrand] = useState<any>(null);
+  const [editingReference, setEditingReference] = useState<any>(null);
   const [editingModel, setEditingModel] = useState<any>(null);
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
@@ -140,7 +139,40 @@ export default function Products() {
         } catch (error: any) {
           toast({
             title: "Error",
-            description: error.message || "Error al eliminar la categoría",
+            description:
+              error.response?.data?.message ||
+              error.message ||
+              "Error al eliminar la categoría",
+            variant: "destructive",
+          });
+        }
+      },
+    });
+  };
+
+  const handleDeleteSubcategory = async (id: number) => {
+    setConfirmDialog({
+      open: true,
+      title: "Eliminar Subcategoría",
+      description:
+        "¿Estás seguro de que deseas eliminar esta subcategoría? Esta acción no se puede deshacer.",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          await subcategoriesApi.delete(id);
+          toast({
+            title: "Éxito",
+            description: "Subcategoría eliminada exitosamente",
+          });
+          fetchAllReferenceData();
+          setConfirmDialog({ ...confirmDialog, open: false });
+        } catch (error: any) {
+          toast({
+            title: "Error",
+            description:
+              error.response?.data?.message ||
+              error.message ||
+              "Error al eliminar la subcategoría",
             variant: "destructive",
           });
         }
@@ -167,7 +199,10 @@ export default function Products() {
         } catch (error: any) {
           toast({
             title: "Error",
-            description: error.message || "Error al eliminar el fabricante",
+            description:
+              error.response?.data?.message ||
+              error.message ||
+              "Error al eliminar el fabricante",
             variant: "destructive",
           });
         }
@@ -194,7 +229,10 @@ export default function Products() {
         } catch (error: any) {
           toast({
             title: "Error",
-            description: error.message || "Error al eliminar la marca",
+            description:
+              error.response?.data?.message ||
+              error.message ||
+              "Error al eliminar la marca",
             variant: "destructive",
           });
         }
@@ -221,7 +259,10 @@ export default function Products() {
         } catch (error: any) {
           toast({
             title: "Error",
-            description: error.message || "Error al eliminar el modelo",
+            description:
+              error.response?.data?.message ||
+              error.message ||
+              "Error al eliminar el modelo",
             variant: "destructive",
           });
         }
@@ -230,18 +271,27 @@ export default function Products() {
   };
 
   const handleEditCategory = (category: any) => {
-    setEditingCategory(category);
-    setShowCategoryDialog(true);
+    setEditingReference(category);
+    setReferenceDialogType("category");
+    setShowReferenceDialog(true);
+  };
+
+  const handleEditSubcategory = (subcategory: any) => {
+    setEditingReference(subcategory);
+    setReferenceDialogType("subcategory");
+    setShowReferenceDialog(true);
   };
 
   const handleEditManufacturer = (manufacturer: any) => {
-    setEditingManufacturer(manufacturer);
-    setShowManufacturerDialog(true);
+    setEditingReference(manufacturer);
+    setReferenceDialogType("manufacturer");
+    setShowReferenceDialog(true);
   };
 
   const handleEditBrand = (brand: any) => {
-    setEditingBrand(brand);
-    setShowBrandDialog(true);
+    setEditingReference(brand);
+    setReferenceDialogType("brand");
+    setShowReferenceDialog(true);
   };
 
   const handleEditModel = (model: any) => {
@@ -313,6 +363,42 @@ export default function Products() {
             title: "Error",
             description:
               error.message || "Error al actualizar el estado de la categoría",
+            variant: "destructive",
+          });
+        }
+      },
+    });
+  };
+
+  const handleToggleSubcategoryStatus = async (
+    id: number,
+    currentStatus: boolean,
+  ) => {
+    const newStatus = !currentStatus;
+    setConfirmDialog({
+      open: true,
+      title: newStatus ? "Activar Subcategoría" : "Desactivar Subcategoría",
+      description: `¿Estás seguro de que deseas ${newStatus ? "activar" : "desactivar"} esta subcategoría?`,
+      variant: "default",
+      onConfirm: async () => {
+        try {
+          await subcategoriesApi.update(id, {
+            name: "",
+            category_id: 0,
+            is_active: newStatus,
+          });
+          toast({
+            title: "Éxito",
+            description: `Subcategoría ${newStatus ? "activada" : "desactivada"} exitosamente`,
+          });
+          fetchAllReferenceData();
+          setConfirmDialog({ ...confirmDialog, open: false });
+        } catch (error: any) {
+          toast({
+            title: "Error",
+            description:
+              error.message ||
+              "Error al actualizar el estado de la subcategoría",
             variant: "destructive",
           });
         }
@@ -424,21 +510,11 @@ export default function Products() {
     });
   };
 
-  const handleDialogClose = (
-    type: "category" | "manufacturer" | "brand" | "model",
-  ) => {
+  const handleDialogClose = (type: "reference" | "model") => {
     switch (type) {
-      case "category":
-        setShowCategoryDialog(false);
-        setEditingCategory(null);
-        break;
-      case "manufacturer":
-        setShowManufacturerDialog(false);
-        setEditingManufacturer(null);
-        break;
-      case "brand":
-        setShowBrandDialog(false);
-        setEditingBrand(null);
+      case "reference":
+        setShowReferenceDialog(false);
+        setEditingReference(null);
         break;
       case "model":
         setShowModelDialog(false);
@@ -472,12 +548,21 @@ export default function Products() {
     model.name.toLowerCase().includes(search.toLowerCase()),
   );
 
+  // Debug log
+  console.log("Reference data:", {
+    categories: reference.categories?.length,
+    subcategories: reference.subcategories?.length,
+    manufacturers: reference.manufacturers?.length,
+    brands: reference.brands?.length,
+    models: reference.models?.length,
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Productos</h1>
-          <p className="text-slate-600">Administra tu catálogo de productos</p>
+          <h1 className="text-3xl font-bold tracking-tight">Catálogo</h1>
+          <p className="text-slate-600">Administra tu catálogo</p>
         </div>
         {activeTab === "products" && (
           <Button onClick={() => setShowWizard(true)}>
@@ -492,14 +577,21 @@ export default function Products() {
         onValueChange={setActiveTab}
         className="space-y-6"
       >
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="products" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
-            <span className="hidden sm:inline">Productos</span>
+            <span className="hidden sm:inline">Productos (Opcional)</span>
           </TabsTrigger>
           <TabsTrigger value="categories" className="flex items-center gap-2">
             <Tag className="h-4 w-4" />
             <span className="hidden sm:inline">Categorías</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="subcategories"
+            className="flex items-center gap-2"
+          >
+            <Layers className="h-4 w-4" />
+            <span className="hidden sm:inline">Subcategorías</span>
           </TabsTrigger>
           <TabsTrigger
             value="manufacturers"
@@ -514,7 +606,7 @@ export default function Products() {
           </TabsTrigger>
           <TabsTrigger value="models" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
-            <span className="hidden sm:inline">Modelos</span>
+            <span className="hidden sm:inline">Modelos (Opcional)</span>
           </TabsTrigger>
         </TabsList>
 
@@ -549,78 +641,84 @@ export default function Products() {
                   </Button>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Marca</TableHead>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead>Modelo</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredProducts.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell className="font-medium">
-                          {product.name}
-                        </TableCell>
-                        <TableCell>{product.brand_name || "-"}</TableCell>
-                        <TableCell>{product.category_name || "-"}</TableCell>
-                        <TableCell>{product.model_name || "-"}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              product.is_active ? "default" : "secondary"
-                            }
-                          >
-                            {product.is_active ? "Activo" : "Inactivo"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditProduct(product)}
-                              title="Editar"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                handleToggleProductStatus(
-                                  product.id,
-                                  product.is_active,
-                                )
-                              }
-                              title={
-                                product.is_active ? "Desactivar" : "Activar"
-                              }
-                            >
-                              {product.is_active ? (
-                                <PowerOff className="h-4 w-4 text-orange-600" />
-                              ) : (
-                                <Power className="h-4 w-4 text-green-600" />
-                              )}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(product.id)}
-                              title="Eliminar"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[200px]">Nombre</TableHead>
+                        <TableHead className="min-w-[150px]">Marca</TableHead>
+                        <TableHead className="min-w-[150px]">
+                          Categoría
+                        </TableHead>
+                        <TableHead className="min-w-[120px]">Modelo</TableHead>
+                        <TableHead className="min-w-[100px]">Estado</TableHead>
+                        <TableHead className="text-right min-w-[120px]">
+                          Acciones
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredProducts.map((product) => (
+                        <TableRow key={product.id}>
+                          <TableCell className="font-medium">
+                            {product.name}
+                          </TableCell>
+                          <TableCell>{product.brand_name || "-"}</TableCell>
+                          <TableCell>{product.category_name || "-"}</TableCell>
+                          <TableCell>{product.model_name || "-"}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                product.is_active ? "default" : "secondary"
+                              }
+                            >
+                              {product.is_active ? "Activo" : "Inactivo"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditProduct(product)}
+                                title="Editar"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleToggleProductStatus(
+                                    product.id,
+                                    product.is_active,
+                                  )
+                                }
+                                title={
+                                  product.is_active ? "Desactivar" : "Activar"
+                                }
+                              >
+                                {product.is_active ? (
+                                  <PowerOff className="h-4 w-4 text-orange-600" />
+                                ) : (
+                                  <Power className="h-4 w-4 text-green-600" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(product.id)}
+                                title="Eliminar"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -635,7 +733,13 @@ export default function Products() {
                   <Tag className="h-5 w-5" />
                   Categorías
                 </CardTitle>
-                <Button size="sm" onClick={() => setShowCategoryDialog(true)}>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setReferenceDialogType("category");
+                    setShowReferenceDialog(true);
+                  }}
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Agregar Categoría
                 </Button>
@@ -659,80 +763,259 @@ export default function Products() {
                   <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead>Slug</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredCategories.map((category) => (
-                      <TableRow key={category.id}>
-                        <TableCell className="font-medium">
-                          {category.name}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {category.description || "-"}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {category.slug}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              category.is_active ? "default" : "secondary"
-                            }
-                          >
-                            {category.is_active ? "Activo" : "Inactivo"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditCategory(category)}
-                              title="Editar"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                handleToggleCategoryStatus(
-                                  category.id,
-                                  category.is_active,
-                                )
-                              }
-                              title={
-                                category.is_active ? "Desactivar" : "Activar"
-                              }
-                            >
-                              {category.is_active ? (
-                                <PowerOff className="h-4 w-4 text-orange-600" />
-                              ) : (
-                                <Power className="h-4 w-4 text-green-600" />
-                              )}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteCategory(category.id)}
-                              title="Eliminar"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[80px]">Imagen</TableHead>
+                        <TableHead className="min-w-[200px]">Nombre</TableHead>
+                        <TableHead className="min-w-[250px]">
+                          Descripción
+                        </TableHead>
+                        <TableHead className="min-w-[180px]">Slug</TableHead>
+                        <TableHead className="min-w-[100px]">Estado</TableHead>
+                        <TableHead className="text-right min-w-[140px]">
+                          Acciones
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCategories.map((category) => (
+                        <TableRow key={category.id}>
+                          <TableCell>
+                            {category.main_image ? (
+                              <img
+                                src={getImageUrl(category.main_image)}
+                                alt={category.name}
+                                className="w-12 h-12 object-cover rounded"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                                <Tag className="h-6 w-6 text-gray-400" />
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {category.name}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {category.description || "-"}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {category.slug}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                category.is_active ? "default" : "secondary"
+                              }
+                            >
+                              {category.is_active ? "Activo" : "Inactivo"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditCategory(category)}
+                                title="Editar"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleToggleCategoryStatus(
+                                    category.id,
+                                    category.is_active,
+                                  )
+                                }
+                                title={
+                                  category.is_active ? "Desactivar" : "Activar"
+                                }
+                              >
+                                {category.is_active ? (
+                                  <PowerOff className="h-4 w-4 text-orange-600" />
+                                ) : (
+                                  <Power className="h-4 w-4 text-green-600" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleDeleteCategory(category.id)
+                                }
+                                title="Eliminar"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Subcategories Tab */}
+        <TabsContent value="subcategories" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Layers className="h-5 w-5" />
+                  Subcategorías
+                </CardTitle>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setReferenceDialogType("subcategory");
+                    setShowReferenceDialog(true);
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Agregar Subcategoría
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center space-x-2">
+                  <Search className="h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Buscar subcategorías..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="max-w-sm"
+                  />
+                </div>
+              </div>
+
+              {reference.loading.isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[80px]">Imagen</TableHead>
+                        <TableHead className="min-w-[200px]">Nombre</TableHead>
+                        <TableHead className="min-w-[150px]">
+                          Categoría
+                        </TableHead>
+                        <TableHead className="min-w-[250px]">
+                          Descripción
+                        </TableHead>
+                        <TableHead className="min-w-[100px]">Estado</TableHead>
+                        <TableHead className="text-right min-w-[140px]">
+                          Acciones
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(reference.subcategories || [])
+                        .filter((sub) =>
+                          sub.name.toLowerCase().includes(search.toLowerCase()),
+                        )
+                        .map((subcategory) => {
+                          const category = reference.categories.find(
+                            (c) => c.id === subcategory.category_id,
+                          );
+                          return (
+                            <TableRow key={subcategory.id}>
+                              <TableCell>
+                                {subcategory.main_image ? (
+                                  <img
+                                    src={getImageUrl(subcategory.main_image)}
+                                    alt={subcategory.name}
+                                    className="w-12 h-12 object-cover rounded"
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                                    <Layers className="h-6 w-6 text-gray-400" />
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {subcategory.name}
+                              </TableCell>
+                              <TableCell>{category?.name || "-"}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {subcategory.description || "-"}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={
+                                    subcategory.is_active
+                                      ? "default"
+                                      : "secondary"
+                                  }
+                                >
+                                  {subcategory.is_active
+                                    ? "Activo"
+                                    : "Inactivo"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end space-x-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleEditSubcategory(subcategory)
+                                    }
+                                    title="Editar"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleToggleSubcategoryStatus(
+                                        subcategory.id,
+                                        subcategory.is_active,
+                                      )
+                                    }
+                                    title={
+                                      subcategory.is_active
+                                        ? "Desactivar"
+                                        : "Activar"
+                                    }
+                                  >
+                                    {subcategory.is_active ? (
+                                      <PowerOff className="h-4 w-4 text-orange-600" />
+                                    ) : (
+                                      <Power className="h-4 w-4 text-green-600" />
+                                    )}
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleDeleteSubcategory(subcategory.id)
+                                    }
+                                    title="Eliminar"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -749,7 +1032,10 @@ export default function Products() {
                 </CardTitle>
                 <Button
                   size="sm"
-                  onClick={() => setShowManufacturerDialog(true)}
+                  onClick={() => {
+                    setReferenceDialogType("manufacturer");
+                    setShowReferenceDialog(true);
+                  }}
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Agregar Fabricante
@@ -774,82 +1060,114 @@ export default function Products() {
                   <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredManufacturers.map((manufacturer) => (
-                      <TableRow key={manufacturer.id}>
-                        <TableCell className="font-medium">
-                          {manufacturer.name}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {manufacturer.description || "-"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              manufacturer.is_active ? "default" : "secondary"
-                            }
-                          >
-                            {manufacturer.is_active ? "Activo" : "Inactivo"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                handleEditManufacturer(manufacturer)
-                              }
-                              title="Editar"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                handleToggleManufacturerStatus(
-                                  manufacturer.id,
-                                  manufacturer.is_active,
-                                )
-                              }
-                              title={
-                                manufacturer.is_active
-                                  ? "Desactivar"
-                                  : "Activar"
-                              }
-                            >
-                              {manufacturer.is_active ? (
-                                <PowerOff className="h-4 w-4 text-orange-600" />
-                              ) : (
-                                <Power className="h-4 w-4 text-green-600" />
-                              )}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                handleDeleteManufacturer(manufacturer.id)
-                              }
-                              title="Eliminar"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[80px]">Imagen</TableHead>
+                        <TableHead className="min-w-[180px]">Nombre</TableHead>
+                        <TableHead className="min-w-[140px]">
+                          Categoría
+                        </TableHead>
+                        <TableHead className="min-w-[140px]">
+                          Subcategoría
+                        </TableHead>
+                        <TableHead className="min-w-[250px]">
+                          Descripción
+                        </TableHead>
+                        <TableHead className="min-w-[100px]">Estado</TableHead>
+                        <TableHead className="text-right min-w-[140px]">
+                          Acciones
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredManufacturers.map((manufacturer) => (
+                        <TableRow key={manufacturer.id}>
+                          <TableCell>
+                            {manufacturer.main_image ? (
+                              <img
+                                src={getImageUrl(manufacturer.main_image)}
+                                alt={manufacturer.name}
+                                className="w-12 h-12 object-cover rounded"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                                <Factory className="h-6 w-6 text-gray-400" />
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {manufacturer.name}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {manufacturer.category_name || "-"}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {manufacturer.subcategory_name || "-"}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {manufacturer.description || "-"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                manufacturer.is_active ? "default" : "secondary"
+                              }
+                            >
+                              {manufacturer.is_active ? "Activo" : "Inactivo"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleEditManufacturer(manufacturer)
+                                }
+                                title="Editar"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleToggleManufacturerStatus(
+                                    manufacturer.id,
+                                    manufacturer.is_active,
+                                  )
+                                }
+                                title={
+                                  manufacturer.is_active
+                                    ? "Desactivar"
+                                    : "Activar"
+                                }
+                              >
+                                {manufacturer.is_active ? (
+                                  <PowerOff className="h-4 w-4 text-orange-600" />
+                                ) : (
+                                  <Power className="h-4 w-4 text-green-600" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleDeleteManufacturer(manufacturer.id)
+                                }
+                                title="Eliminar"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -864,7 +1182,13 @@ export default function Products() {
                   <Layers className="h-5 w-5" />
                   Marcas
                 </CardTitle>
-                <Button size="sm" onClick={() => setShowBrandDialog(true)}>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setReferenceDialogType("brand");
+                    setShowReferenceDialog(true);
+                  }}
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Agregar Marca
                 </Button>
@@ -888,83 +1212,117 @@ export default function Products() {
                   <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Fabricante</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredBrands.map((brand) => {
-                      const manufacturer = reference.manufacturers.find(
-                        (m) => m.id === brand.manufacturer_id,
-                      );
-                      return (
-                        <TableRow key={brand.id}>
-                          <TableCell className="font-medium">
-                            {brand.name}
-                          </TableCell>
-                          <TableCell>{manufacturer?.name || "-"}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {brand.description || "-"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                brand.is_active ? "default" : "secondary"
-                              }
-                            >
-                              {brand.is_active ? "Activo" : "Inactivo"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end space-x-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditBrand(brand)}
-                                title="Editar"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  handleToggleBrandStatus(
-                                    brand.id,
-                                    brand.is_active,
-                                  )
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[80px]">Imagen</TableHead>
+                        <TableHead className="min-w-[180px]">Nombre</TableHead>
+                        <TableHead className="min-w-[150px]">
+                          Fabricante
+                        </TableHead>
+                        <TableHead className="min-w-[130px]">
+                          Categoría
+                        </TableHead>
+                        <TableHead className="min-w-[130px]">
+                          Subcategoría
+                        </TableHead>
+                        <TableHead className="min-w-[230px]">
+                          Descripción
+                        </TableHead>
+                        <TableHead className="min-w-[100px]">Estado</TableHead>
+                        <TableHead className="text-right min-w-[140px]">
+                          Acciones
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBrands.map((brand) => {
+                        const manufacturer = reference.manufacturers.find(
+                          (m) => m.id === brand.manufacturer_id,
+                        );
+                        return (
+                          <TableRow key={brand.id}>
+                            <TableCell>
+                              {brand.main_image ? (
+                                <img
+                                  src={getImageUrl(brand.main_image)}
+                                  alt={brand.name}
+                                  className="w-12 h-12 object-cover rounded"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                                  <Layers className="h-6 w-6 text-gray-400" />
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {brand.name}
+                            </TableCell>
+                            <TableCell>{manufacturer?.name || "-"}</TableCell>
+                            <TableCell className="text-sm">
+                              {brand.category_name || "-"}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {brand.subcategory_name || "-"}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {brand.description || "-"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  brand.is_active ? "default" : "secondary"
                                 }
-                                title={
-                                  brand.is_active ? "Desactivar" : "Activar"
-                                }
                               >
-                                {brand.is_active ? (
-                                  <PowerOff className="h-4 w-4 text-orange-600" />
-                                ) : (
-                                  <Power className="h-4 w-4 text-green-600" />
-                                )}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteBrand(brand.id)}
-                                title="Eliminar"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                                {brand.is_active ? "Activo" : "Inactivo"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end space-x-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditBrand(brand)}
+                                  title="Editar"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleToggleBrandStatus(
+                                      brand.id,
+                                      brand.is_active,
+                                    )
+                                  }
+                                  title={
+                                    brand.is_active ? "Desactivar" : "Activar"
+                                  }
+                                >
+                                  {brand.is_active ? (
+                                    <PowerOff className="h-4 w-4 text-orange-600" />
+                                  ) : (
+                                    <Power className="h-4 w-4 text-green-600" />
+                                  )}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteBrand(brand.id)}
+                                  title="Eliminar"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -1003,83 +1361,89 @@ export default function Products() {
                   <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Marca</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredModels.map((model) => {
-                      const brand = reference.brands.find(
-                        (b) => b.id === model.brand_id,
-                      );
-                      return (
-                        <TableRow key={model.id}>
-                          <TableCell className="font-medium">
-                            {model.name}
-                          </TableCell>
-                          <TableCell>{brand?.name || "-"}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {model.description || "-"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                model.is_active ? "default" : "secondary"
-                              }
-                            >
-                              {model.is_active ? "Activo" : "Inactivo"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end space-x-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditModel(model)}
-                                title="Editar"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  handleToggleModelStatus(
-                                    model.id,
-                                    model.is_active,
-                                  )
-                                }
-                                title={
-                                  model.is_active ? "Desactivar" : "Activar"
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[200px]">Nombre</TableHead>
+                        <TableHead className="min-w-[150px]">Marca</TableHead>
+                        <TableHead className="min-w-[300px]">
+                          Descripción
+                        </TableHead>
+                        <TableHead className="min-w-[100px]">Estado</TableHead>
+                        <TableHead className="text-right min-w-[140px]">
+                          Acciones
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredModels.map((model) => {
+                        const brand = reference.brands.find(
+                          (b) => b.id === model.brand_id,
+                        );
+                        return (
+                          <TableRow key={model.id}>
+                            <TableCell className="font-medium">
+                              {model.name}
+                            </TableCell>
+                            <TableCell>{brand?.name || "-"}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {model.description || "-"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  model.is_active ? "default" : "secondary"
                                 }
                               >
-                                {model.is_active ? (
-                                  <PowerOff className="h-4 w-4 text-orange-600" />
-                                ) : (
-                                  <Power className="h-4 w-4 text-green-600" />
-                                )}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteModel(model.id)}
-                                title="Eliminar"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                                {model.is_active ? "Activo" : "Inactivo"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end space-x-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditModel(model)}
+                                  title="Editar"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleToggleModelStatus(
+                                      model.id,
+                                      model.is_active,
+                                    )
+                                  }
+                                  title={
+                                    model.is_active ? "Desactivar" : "Activar"
+                                  }
+                                >
+                                  {model.is_active ? (
+                                    <PowerOff className="h-4 w-4 text-orange-600" />
+                                  ) : (
+                                    <Power className="h-4 w-4 text-green-600" />
+                                  )}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteModel(model.id)}
+                                  title="Eliminar"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -1100,37 +1464,16 @@ export default function Products() {
         product={editingProduct}
       />
 
-      <CategoryDialog
-        open={showCategoryDialog}
-        onClose={() => handleDialogClose("category")}
+      <ReferenceDataWizard
+        open={showReferenceDialog}
+        onClose={() => handleDialogClose("reference")}
         onSuccess={() => {
           fetchAllReferenceData();
           setSearch("");
-          handleDialogClose("category");
+          handleDialogClose("reference");
         }}
-        category={editingCategory}
-      />
-
-      <ManufacturerDialog
-        open={showManufacturerDialog}
-        onClose={() => handleDialogClose("manufacturer")}
-        onSuccess={() => {
-          fetchAllReferenceData();
-          setSearch("");
-          handleDialogClose("manufacturer");
-        }}
-        manufacturer={editingManufacturer}
-      />
-
-      <BrandDialog
-        open={showBrandDialog}
-        onClose={() => handleDialogClose("brand")}
-        onSuccess={() => {
-          fetchAllReferenceData();
-          setSearch("");
-          handleDialogClose("brand");
-        }}
-        brand={editingBrand}
+        type={referenceDialogType}
+        entity={editingReference}
       />
 
       <ModelDialog

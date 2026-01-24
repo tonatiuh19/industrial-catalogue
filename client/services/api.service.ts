@@ -4,6 +4,8 @@ import type {
   ProductListResponse,
   Category,
   CategoryListResponse,
+  Subcategory,
+  SubcategoryListResponse,
   Manufacturer,
   ManufacturerListResponse,
   Brand,
@@ -86,6 +88,45 @@ export const categoriesApi = {
     return httpClient.get<{ available: boolean }>(
       `/categories/validate-slug?slug=${slug}`,
     );
+  },
+};
+
+// Subcategories API
+export const subcategoriesApi = {
+  getAll: (params?: { category_id?: number; include_inactive?: boolean }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.category_id) {
+      queryParams.append("category_id", params.category_id.toString());
+    }
+    if (params?.include_inactive) {
+      queryParams.append("include_inactive", "true");
+    }
+    return httpClient.get<SubcategoryListResponse>(
+      `/admin/subcategories?${queryParams.toString()}`,
+    );
+  },
+  create: (data: {
+    name: string;
+    slug: string;
+    category_id: number;
+    description?: string;
+  }) => {
+    return httpClient.post("/admin/subcategories", data);
+  },
+  update: (
+    id: number,
+    data: {
+      name: string;
+      category_id: number;
+      slug?: string;
+      description?: string;
+      is_active?: boolean;
+    },
+  ) => {
+    return httpClient.put<ApiResponse>(`/admin/subcategories/${id}`, data);
+  },
+  delete: (id: number) => {
+    return httpClient.delete<ApiResponse>(`/admin/subcategories/${id}`);
   },
 };
 
@@ -215,5 +256,36 @@ export const quotesApi = {
 
   getById: (id: number) => {
     return httpClient.get(`/quotes/${id}`);
+  },
+};
+
+// Home Sections API
+export const homeSectionsApi = {
+  getRandomSections: (count: number = 3) => {
+    return httpClient.get<ApiResponse<any[]>>(`/home/sections?count=${count}`);
+  },
+};
+
+// Catalog API
+export const catalogApi = {
+  getCatalogData: (params?: {
+    type?: string;
+    id?: number;
+    category_id?: number;
+    subcategory_id?: number;
+    brand_id?: number;
+    manufacturer_id?: number;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, value.toString());
+        }
+      });
+    }
+    return httpClient.get<ApiResponse<any>>(
+      `/catalog?${queryParams.toString()}`,
+    );
   },
 };

@@ -13,11 +13,28 @@ export interface Category {
   name: string;
   description: string | null;
   slug: string;
+  main_image: string | null;
+  extra_images: string | null;
   parent_id: number | null;
   display_order: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface Subcategory {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  category_id: number;
+  main_image: string | null;
+  extra_images: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  category_name?: string;
 }
 
 export interface Manufacturer {
@@ -26,22 +43,35 @@ export interface Manufacturer {
   description: string | null;
   website: string | null;
   logo_url: string | null;
+  main_image: string | null;
+  extra_images: string | null;
+  category_id: number | null;
+  subcategory_id: number | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  // Joined fields
+  category_name?: string;
+  subcategory_name?: string;
 }
 
 export interface Brand {
   id: number;
   name: string;
   manufacturer_id: number | null;
+  category_id: number | null;
+  subcategory_id: number | null;
   description: string | null;
   logo_url: string | null;
+  main_image: string | null;
+  extra_images: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
   // Joined fields
   manufacturer_name?: string;
+  category_name?: string;
+  subcategory_name?: string;
 }
 
 export interface Model {
@@ -102,6 +132,18 @@ export interface Quote {
   customer_phone: string | null;
   customer_company: string | null;
   customer_message: string | null;
+  // New fields for simplified quote system
+  brand: string | null;
+  product_type: string | null;
+  part_number: string | null;
+  specifications: string | null;
+  quantity: number;
+  city_state: string | null;
+  preferred_contact_method: "email" | "phone" | "whatsapp";
+  brand_id: number | null;
+  manufacturer_id: number | null;
+  category_id: number | null;
+  subcategory_id: number | null;
   status:
     | "pending"
     | "processing"
@@ -115,6 +157,10 @@ export interface Quote {
   updated_at: string;
   // Joined fields
   items?: QuoteItem[];
+  brand_name?: string;
+  manufacturer_name?: string;
+  category_name?: string;
+  subcategory_name?: string;
 }
 
 export interface QuoteItem {
@@ -166,12 +212,28 @@ export interface UpdateProductRequest extends Partial<CreateProductRequest> {
 }
 
 export interface CreateQuoteRequest {
+  // Step 1: Product Information
+  brand?: string;
+  product_type: string;
+  part_number?: string;
+  specifications?: string;
+  quantity?: number;
+  // Pre-filled context
+  brand_id?: number;
+  manufacturer_id?: number;
+  category_id?: number;
+  subcategory_id?: number;
+  // Step 2: Contact Information
   customer_name: string;
   customer_email: string;
-  customer_phone?: string;
-  customer_company?: string;
+  customer_phone: string;
+  customer_company: string;
+  city_state?: string;
+  preferred_contact_method?: "email" | "phone" | "whatsapp";
+  contact_notes?: string;
+  // Legacy support (optional)
   customer_message?: string;
-  items: Array<{
+  items?: Array<{
     product_id: number;
     quantity: number;
     notes?: string;
@@ -207,6 +269,11 @@ export interface QuoteListResponse extends PaginatedResponse<Quote> {}
 export interface CategoryListResponse {
   success: boolean;
   data: Category[];
+}
+
+export interface SubcategoryListResponse {
+  success: boolean;
+  data: Subcategory[];
 }
 
 export interface ManufacturerListResponse {

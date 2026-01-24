@@ -367,6 +367,14 @@ const adminReferenceReducer = (
         error: { hasError: false },
       };
 
+    case "ADMIN_SUBCATEGORIES_SUCCESS":
+      return {
+        ...state,
+        subcategories: action.payload,
+        loading: { isLoading: false },
+        error: { hasError: false },
+      };
+
     case "ADMIN_MANUFACTURERS_SUCCESS":
       return {
         ...state,
@@ -570,6 +578,7 @@ export const adminReducer = (
     // Reference data actions
     case "ADMIN_REFERENCE_LOADING":
     case "ADMIN_CATEGORIES_SUCCESS":
+    case "ADMIN_SUBCATEGORIES_SUCCESS":
     case "ADMIN_MANUFACTURERS_SUCCESS":
     case "ADMIN_BRANDS_SUCCESS":
     case "ADMIN_MODELS_SUCCESS":

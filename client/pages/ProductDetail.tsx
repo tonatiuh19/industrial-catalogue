@@ -14,7 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Header from "@/components/Header";
-import QuoteWizard from "@/components/QuoteWizard";
+import NewQuoteWizard from "@/components/NewQuoteWizard";
 import SEO from "@/components/SEO";
 import { LoadingSpinner } from "@/components/LoadingMask";
 import { useQuote } from "@/context/QuoteContext";
@@ -507,7 +507,14 @@ const ProductDetail = () => {
       </div>
 
       {/* Quote Wizard */}
-      {isWizardOpen && <QuoteWizard />}
+      {/* New Quote Wizard */}
+      {useQuote().isNewWizardOpen && (
+        <NewQuoteWizard
+          isOpen={useQuote().isNewWizardOpen}
+          onClose={useQuote().closeNewWizard}
+          prefillData={useQuote().prefillData}
+        />
+      )}
     </div>
   );
 };

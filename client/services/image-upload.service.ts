@@ -258,5 +258,5 @@ export function getImageUrl(path: string): string {
   if (path.startsWith("http")) {
     return path;
   }
-  return `https://disruptinglabs.com${path}`;
+  return `https://disruptinglabs.com/data/api/${path}`;
 }

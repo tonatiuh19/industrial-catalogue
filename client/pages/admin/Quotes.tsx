@@ -105,83 +105,89 @@ export default function Quotes() {
               No se encontraron solicitudes de cotización
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Producto</TableHead>
-                  <TableHead>Cantidad</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {quotesState.quotes.map((quote) => (
-                  <TableRow key={quote.id}>
-                    <TableCell>
-                      {new Date(quote.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{quote.customer_name}</p>
-                        <p className="text-sm text-slate-600">
-                          {quote.customer_email}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">
-                          {quote.product_name || "-"}
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          {quote.product_model || "-"}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>{quote.quantity}</TableCell>
-                    <TableCell>
-                      <Select
-                        value={quote.status}
-                        onValueChange={(value) =>
-                          handleStatusChange(quote.id, value)
-                        }
-                      >
-                        <SelectTrigger className="w-[130px]">
-                          <Badge
-                            className={
-                              statusColors[
-                                quote.status as keyof typeof statusColors
-                              ]
-                            }
-                          >
-                            {quote.status === "pending"
-                              ? "Pendiente"
-                              : quote.status === "contacted"
-                                ? "Contactado"
-                                : quote.status === "quoted"
-                                  ? "Cotizado"
-                                  : "Cerrado"}
-                          </Badge>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pendiente</SelectItem>
-                          <SelectItem value="contacted">Contactado</SelectItem>
-                          <SelectItem value="quoted">Cotizado</SelectItem>
-                          <SelectItem value="closed">Cerrado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[120px]">Fecha</TableHead>
+                    <TableHead className="min-w-[200px]">Cliente</TableHead>
+                    <TableHead className="min-w-[200px]">Producto</TableHead>
+                    <TableHead className="min-w-[100px]">Cantidad</TableHead>
+                    <TableHead className="min-w-[140px]">Estado</TableHead>
+                    <TableHead className="text-right min-w-[100px]">
+                      Acciones
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {quotesState.quotes.map((quote) => (
+                    <TableRow key={quote.id}>
+                      <TableCell>
+                        {new Date(quote.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{quote.customer_name}</p>
+                          <p className="text-sm text-slate-600">
+                            {quote.customer_email}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">
+                            {quote.product_name || "-"}
+                          </p>
+                          <p className="text-sm text-slate-600">
+                            {quote.product_model || "-"}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>{quote.quantity}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={quote.status}
+                          onValueChange={(value) =>
+                            handleStatusChange(quote.id, value)
+                          }
+                        >
+                          <SelectTrigger className="w-[130px]">
+                            <Badge
+                              className={
+                                statusColors[
+                                  quote.status as keyof typeof statusColors
+                                ]
+                              }
+                            >
+                              {quote.status === "pending"
+                                ? "Pendiente"
+                                : quote.status === "contacted"
+                                  ? "Contactado"
+                                  : quote.status === "quoted"
+                                    ? "Cotizado"
+                                    : "Cerrado"}
+                            </Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pendiente</SelectItem>
+                            <SelectItem value="contacted">
+                              Contactado
+                            </SelectItem>
+                            <SelectItem value="quoted">Cotizado</SelectItem>
+                            <SelectItem value="closed">Cerrado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

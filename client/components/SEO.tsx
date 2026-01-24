@@ -14,7 +14,7 @@ interface SEOProps {
 }
 
 const SEO = ({
-  title = "Industrial - Catálogo de Productos Industriales",
+  title = "Trenor - Catálogo de Productos Industriales",
   description = "Encuentra herramientas y equipamiento industrial de calidad. Innovación y durabilidad en cada producto.",
   image = "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=1200",
   url = window.location.href,
@@ -25,7 +25,7 @@ const SEO = ({
   sku,
   noindex = false,
 }: SEOProps) => {
-  const siteName = "Industrial";
+  const siteName = "Trenor";
   const fullTitle = title.includes(siteName) ? title : `${title} | ${siteName}`;
 
   return (
@@ -76,7 +76,7 @@ const SEO = ({
         content={noindex ? "noindex, nofollow" : "index, follow"}
       />
       <meta name="language" content="Spanish" />
-      <meta name="author" content="Industrial" />
+      <meta name="author" content="Trenor" />
     </Helmet>
   );
 };

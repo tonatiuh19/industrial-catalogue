@@ -67,11 +67,27 @@ export interface Category {
   name: string;
   description?: string;
   slug: string;
+  main_image?: string | null;
+  extra_images?: string | null;
   parent_id?: number;
   display_order: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface Subcategory {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  category_id: number;
+  main_image?: string | null;
+  extra_images?: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  category_name?: string;
 }
 
 export interface Manufacturer {
@@ -80,20 +96,33 @@ export interface Manufacturer {
   description?: string;
   website?: string;
   logo_url?: string;
+  main_image?: string | null;
+  extra_images?: string | null;
+  category_id?: number | null;
+  subcategory_id?: number | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  category_name?: string;
+  subcategory_name?: string;
 }
 
 export interface Brand {
   id: number;
   name: string;
   manufacturer_id?: number;
+  category_id?: number | null;
+  subcategory_id?: number | null;
   description?: string;
   logo_url?: string;
+  main_image?: string | null;
+  extra_images?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  manufacturer_name?: string;
+  category_name?: string;
+  subcategory_name?: string;
 }
 
 export interface Model {
@@ -164,6 +193,7 @@ export interface AdminContentState {
 // Admin Reference Data State
 export interface AdminReferenceState {
   categories: Category[];
+  subcategories: Subcategory[];
   manufacturers: Manufacturer[];
   brands: Brand[];
   models: Model[];
@@ -224,6 +254,7 @@ export const initialAdminContentState: AdminContentState = {
 
 export const initialAdminReferenceState: AdminReferenceState = {
   categories: [],
+  subcategories: [],
   manufacturers: [],
   brands: [],
   models: [],

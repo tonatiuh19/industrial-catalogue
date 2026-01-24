@@ -1,10 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const heroSection = document.querySelector("section");
+      if (heroSection) {
+        const heroBottom = heroSection.getBoundingClientRect().bottom;
+        setIsScrolled(heroBottom <= 0);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const categories = [
     "Herramientas",
@@ -24,12 +38,15 @@ const Header = () => {
             to="/"
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-steel-800 rounded-lg flex items-center justify-center shadow-md">
-              <span className="text-white font-black text-sm">IND</span>
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-steel-800 bg-clip-text text-transparent hidden sm:inline">
-              Industrial
-            </span>
+            <img
+              src={
+                !isScrolled
+                  ? "https://disruptinglabs.com/data/trenor/assets/images/logo_dark_trenor.png"
+                  : "https://disruptinglabs.com/data/trenor/assets/images/logo_white_trenor.png"
+              }
+              alt="Trenor Logo"
+              className="h-8 w-auto object-contain transition-opacity duration-300"
+            />
           </Link>
 
           {/* Search bar - hidden on mobile */}

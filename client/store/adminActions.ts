@@ -4,6 +4,7 @@ import {
   AdminUser,
   ContentPage,
   Category,
+  Subcategory,
   Manufacturer,
   Brand,
   Model,
@@ -60,6 +61,7 @@ export type AdminContentAction =
 export type AdminReferenceAction =
   | { type: "ADMIN_REFERENCE_LOADING"; payload?: string }
   | { type: "ADMIN_CATEGORIES_SUCCESS"; payload: Category[] }
+  | { type: "ADMIN_SUBCATEGORIES_SUCCESS"; payload: Subcategory[] }
   | { type: "ADMIN_MANUFACTURERS_SUCCESS"; payload: Manufacturer[] }
   | { type: "ADMIN_BRANDS_SUCCESS"; payload: Brand[] }
   | { type: "ADMIN_MODELS_SUCCESS"; payload: Model[] }

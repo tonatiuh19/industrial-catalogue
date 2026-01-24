@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
-import { ChevronDown, Plus, ShoppingBag, Check, Minus } from "lucide-react";
+import {
+  ChevronDown,
+  Plus,
+  ShoppingBag,
+  Check,
+  Minus,
+  FileText,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import ProductFilters from "@/components/ProductFilters";
-import QuoteWizard from "@/components/QuoteWizard";
+import NewQuoteWizard from "@/components/NewQuoteWizard";
 import SEO from "@/components/SEO";
 import { LoadingSpinner } from "@/components/LoadingMask";
 import { useQuote } from "@/context/QuoteContext";
@@ -29,8 +36,10 @@ const Catalogue = () => {
     removeProduct,
     updateProductQuantity,
     selectedProducts,
-    isWizardOpen,
-    openWizard,
+    isNewWizardOpen,
+    openNewWizard,
+    closeNewWizard,
+    prefillData,
   } = useQuote();
 
   const [showFilters, setShowFilters] = useState(false);
@@ -124,7 +133,7 @@ const Catalogue = () => {
       {/* Floating Quote Button */}
       {selectedProducts.length > 0 && (
         <button
-          onClick={openWizard}
+          onClick={() => openNewWizard()}
           className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 flex items-center gap-2 sm:gap-3 rounded-full bg-[#c03818] px-4 py-3 sm:px-6 sm:py-4 font-bold text-white shadow-2xl transition-all hover:scale-105 hover:brightness-110 text-sm sm:text-base"
         >
           <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -504,8 +513,27 @@ const Catalogue = () => {
           </main>
         </div>
       </div>
-      {/* Quote Wizard */}
-      {isWizardOpen && <QuoteWizard />} {/* Overlay for mobile filters */}
+      {/* Floating Quote Button */}
+      <button
+        onClick={() => openNewWizard()}
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-6 py-4 bg-accent text-white font-bold text-base rounded-full hover:bg-orange-600 hover:shadow-2xl hover:shadow-accent/50 transition-all duration-300 active:scale-95 shadow-xl group"
+      >
+        <FileText
+          size={20}
+          className="group-hover:rotate-12 transition-transform"
+        />
+        <span className="hidden sm:inline">Cotizar ahora</span>
+      </button>
+
+      {/* New Quote Wizard */}
+      {isNewWizardOpen && (
+        <NewQuoteWizard
+          isOpen={isNewWizardOpen}
+          onClose={closeNewWizard}
+          prefillData={prefillData}
+        />
+      )}
+      {/* Overlay for mobile filters */}
       {showFilters && (
         <div
           className="fixed inset-0 z-30 bg-black/50 md:hidden"

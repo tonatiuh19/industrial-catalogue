@@ -138,19 +138,24 @@ const getBrands: RequestHandler = async (req, res) => {
     const params: any[] = [];
 
     if (!include_inactive) {
-      whereClause = "WHERE is_active = TRUE";
+      whereClause = "WHERE b.is_active = TRUE";
     }
 
     if (manufacturer_id) {
       whereClause += whereClause ? " AND " : "WHERE ";
-      whereClause += "manufacturer_id = ?";
+      whereClause += "b.manufacturer_id = ?";
       params.push(parseInt(manufacturer_id as string));
     }
 
     const brands = await query<any[]>(
-      `SELECT * FROM brands 
+      `SELECT b.*, 
+              c.name as category_name,
+              s.name as subcategory_name
+       FROM brands b
+       LEFT JOIN categories c ON b.category_id = c.id
+       LEFT JOIN subcategories s ON b.subcategory_id = s.id
        ${whereClause}
-       ORDER BY name ASC`,
+       ORDER BY b.name ASC`,
       params,
     );
 
@@ -174,13 +179,18 @@ const getManufacturers: RequestHandler = async (req, res) => {
 
     let whereClause = "";
     if (!include_inactive) {
-      whereClause = "WHERE is_active = TRUE";
+      whereClause = "WHERE m.is_active = TRUE";
     }
 
     const manufacturers = await query<any[]>(
-      `SELECT * FROM manufacturers 
+      `SELECT m.*, 
+              c.name as category_name,
+              s.name as subcategory_name
+       FROM manufacturers m
+       LEFT JOIN categories c ON m.category_id = c.id
+       LEFT JOIN subcategories s ON m.subcategory_id = s.id
        ${whereClause}
-       ORDER BY name ASC`,
+       ORDER BY m.name ASC`,
     );
 
     return res.status(200).json({
@@ -554,15 +564,18 @@ const createQuote: RequestHandler = async (req, res) => {
   try {
     const quoteData: CreateQuoteRequest = req.body;
 
+    // Validate required fields for new quotation system
     if (
+      !quoteData.product_type ||
       !quoteData.customer_name ||
       !quoteData.customer_email ||
-      !quoteData.items ||
-      quoteData.items.length === 0
+      !quoteData.customer_phone ||
+      !quoteData.customer_company
     ) {
       return res.status(400).json({
         success: false,
-        error: "Customer name, email, and at least one item are required",
+        error:
+          "Product type, company name, contact name, email, and phone are required",
       });
     }
 
@@ -573,36 +586,54 @@ const createQuote: RequestHandler = async (req, res) => {
       // Generate quote number
       const quoteNumber = `Q-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-      // Create quote
+      // Create quote with new structure
       const [quoteResult] = await connection.execute(
-        `INSERT INTO quotes (quote_number, customer_name, customer_email, customer_phone, customer_company, customer_message, status) 
-         VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
+        `INSERT INTO quotes (
+          quote_number, customer_name, customer_email, customer_phone, 
+          customer_company, customer_message, brand, product_type, 
+          part_number, specifications, quantity, city_state, 
+          preferred_contact_method, brand_id, manufacturer_id, 
+          category_id, subcategory_id, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
         [
           quoteNumber,
           quoteData.customer_name,
           quoteData.customer_email,
-          quoteData.customer_phone || null,
-          quoteData.customer_company || null,
+          quoteData.customer_phone,
+          quoteData.customer_company,
           quoteData.customer_message || null,
+          quoteData.brand || null,
+          quoteData.product_type,
+          quoteData.part_number || null,
+          quoteData.specifications || null,
+          quoteData.quantity || 1,
+          quoteData.city_state || null,
+          quoteData.preferred_contact_method || "email",
+          quoteData.brand_id || null,
+          quoteData.manufacturer_id || null,
+          quoteData.category_id || null,
+          quoteData.subcategory_id || null,
         ],
       );
 
       const quoteId = (quoteResult as any).insertId;
 
-      // Create quote items
-      for (const item of quoteData.items) {
-        await connection.execute(
-          `INSERT INTO quote_items (quote_id, product_id, quantity, notes) 
-           VALUES (?, ?, ?, ?)`,
-          [quoteId, item.product_id, item.quantity, item.notes || null],
-        );
+      // Legacy support: Create quote items if provided
+      if (quoteData.items && quoteData.items.length > 0) {
+        for (const item of quoteData.items) {
+          await connection.execute(
+            `INSERT INTO quote_items (quote_id, product_id, quantity, notes) 
+             VALUES (?, ?, ?, ?)`,
+            [quoteId, item.product_id, item.quantity, item.notes || null],
+          );
+        }
       }
 
       await connection.commit();
 
       return res.status(201).json({
         success: true,
-        data: { id: quoteId },
+        data: { id: quoteId, quote_number: quoteNumber },
       });
     } catch (error) {
       await connection.rollback();
@@ -622,7 +653,7 @@ const createQuote: RequestHandler = async (req, res) => {
 // ==================== ADMIN CATEGORIES ====================
 const createCategory: RequestHandler = async (req, res) => {
   try {
-    const { name, slug, description } = req.body;
+    const { name, slug, description, main_image, extra_images } = req.body;
 
     if (!name || !slug) {
       return res.status(400).json({
@@ -632,9 +663,15 @@ const createCategory: RequestHandler = async (req, res) => {
     }
 
     const [result] = await pool.execute(
-      `INSERT INTO categories (name, slug, description, is_active, display_order) 
-       VALUES (?, ?, ?, 1, 0)`,
-      [name, slug, description || null],
+      `INSERT INTO categories (name, slug, description, main_image, extra_images, is_active, display_order) 
+       VALUES (?, ?, ?, ?, ?, 1, 0)`,
+      [
+        name,
+        slug,
+        description || null,
+        main_image || null,
+        extra_images || null,
+      ],
     );
 
     const insertId = (result as any).insertId;
@@ -663,7 +700,15 @@ const createCategory: RequestHandler = async (req, res) => {
 const updateCategory: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, slug, description, is_active, display_order } = req.body;
+    const {
+      name,
+      slug,
+      description,
+      main_image,
+      extra_images,
+      is_active,
+      display_order,
+    } = req.body;
 
     const updates: string[] = [];
     const values: any[] = [];
@@ -679,6 +724,14 @@ const updateCategory: RequestHandler = async (req, res) => {
     if (description !== undefined) {
       updates.push("description = ?");
       values.push(description);
+    }
+    if (main_image !== undefined) {
+      updates.push("main_image = ?");
+      values.push(main_image);
+    }
+    if (extra_images !== undefined) {
+      updates.push("extra_images = ?");
+      values.push(extra_images);
     }
     if (is_active !== undefined) {
       updates.push("is_active = ?");
@@ -750,8 +803,236 @@ const deleteCategory: RequestHandler = async (req, res) => {
       success: true,
       message: "Category deleted successfully",
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error deleting category:", error);
+
+    if (
+      error.code === "ER_ROW_IS_REFERENCED_2" ||
+      error.code === "ER_ROW_IS_REFERENCED"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "No se puede eliminar esta categoría porque tiene productos asociados. Elimina los productos primero.",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// ==================== ADMIN SUBCATEGORIES ====================
+const getSubcategories: RequestHandler = async (req, res) => {
+  try {
+    const { include_inactive, category_id } = req.query;
+
+    let whereClause = "";
+    const conditions: string[] = [];
+
+    if (!include_inactive) {
+      conditions.push("s.is_active = TRUE");
+    }
+    if (category_id) {
+      conditions.push(`s.category_id = ${parseInt(category_id as string)}`);
+    }
+
+    if (conditions.length > 0) {
+      whereClause = `WHERE ${conditions.join(" AND ")}`;
+    }
+
+    const subcategories = await query(
+      `SELECT s.*, c.name as category_name 
+       FROM subcategories s
+       LEFT JOIN categories c ON s.category_id = c.id
+       ${whereClause}
+       ORDER BY s.name ASC`,
+    );
+
+    res.status(200).json({
+      success: true,
+      data: subcategories,
+    });
+  } catch (error) {
+    console.error("Get subcategories error:", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+const createSubcategory: RequestHandler = async (req, res) => {
+  try {
+    const { name, slug, description, category_id, main_image, extra_images } =
+      req.body;
+
+    if (!name || !slug || !category_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, slug, and category_id are required",
+      });
+    }
+
+    const [result] = await pool.execute(
+      `INSERT INTO subcategories (name, slug, description, category_id, main_image, extra_images, is_active) 
+       VALUES (?, ?, ?, ?, ?, ?, 1)`,
+      [
+        name,
+        slug,
+        description || null,
+        parseInt(category_id),
+        main_image || null,
+        extra_images || null,
+      ],
+    );
+
+    const insertId = (result as any).insertId;
+
+    res.status(201).json({
+      success: true,
+      data: { id: insertId },
+    });
+  } catch (error: any) {
+    console.error("Error creating subcategory:", error);
+
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
+        success: false,
+        message: "A subcategory with this slug already exists",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const updateSubcategory: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      name,
+      slug,
+      description,
+      category_id,
+      main_image,
+      extra_images,
+      is_active,
+    } = req.body;
+
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (name !== undefined) {
+      updates.push("name = ?");
+      values.push(name);
+    }
+    if (slug !== undefined) {
+      updates.push("slug = ?");
+      values.push(slug);
+    }
+    if (description !== undefined) {
+      updates.push("description = ?");
+      values.push(description);
+    }
+    if (category_id !== undefined) {
+      updates.push("category_id = ?");
+      values.push(parseInt(category_id));
+    }
+    if (main_image !== undefined) {
+      updates.push("main_image = ?");
+      values.push(main_image);
+    }
+    if (extra_images !== undefined) {
+      updates.push("extra_images = ?");
+      values.push(extra_images);
+    }
+    if (is_active !== undefined) {
+      updates.push("is_active = ?");
+      values.push(is_active ? 1 : 0);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No fields to update",
+      });
+    }
+
+    values.push(parseInt(id));
+
+    const [result] = await pool.execute(
+      `UPDATE subcategories SET ${updates.join(", ")} WHERE id = ?`,
+      values,
+    );
+
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Subcategory not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Subcategory updated successfully",
+    });
+  } catch (error: any) {
+    console.error("Error updating subcategory:", error);
+
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
+        success: false,
+        message: "A subcategory with this slug already exists",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const deleteSubcategory: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [result] = await pool.execute(
+      "DELETE FROM subcategories WHERE id = ?",
+      [parseInt(id)],
+    );
+
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Subcategory not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Subcategory deleted successfully",
+    });
+  } catch (error: any) {
+    console.error("Error deleting subcategory:", error);
+
+    if (
+      error.code === "ER_ROW_IS_REFERENCED_2" ||
+      error.code === "ER_ROW_IS_REFERENCED"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "No se puede eliminar esta subcategoría porque tiene datos asociados. Elimina los datos relacionados primero.",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -762,7 +1043,16 @@ const deleteCategory: RequestHandler = async (req, res) => {
 // ==================== ADMIN MANUFACTURERS ====================
 const createManufacturer: RequestHandler = async (req, res) => {
   try {
-    const { name, description, website, logo_url } = req.body;
+    const {
+      name,
+      description,
+      website,
+      logo_url,
+      main_image,
+      extra_images,
+      category_id,
+      subcategory_id,
+    } = req.body;
 
     if (!name) {
       return res.status(400).json({
@@ -772,9 +1062,18 @@ const createManufacturer: RequestHandler = async (req, res) => {
     }
 
     const [result] = await pool.execute(
-      `INSERT INTO manufacturers (name, description, website, logo_url, is_active) 
-       VALUES (?, ?, ?, ?, 1)`,
-      [name, description || null, website || null, logo_url || null],
+      `INSERT INTO manufacturers (name, description, website, logo_url, main_image, extra_images, category_id, subcategory_id, is_active) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+      [
+        name,
+        description || null,
+        website || null,
+        logo_url || null,
+        main_image || null,
+        extra_images || null,
+        category_id || null,
+        subcategory_id || null,
+      ],
     );
 
     const insertId = (result as any).insertId;
@@ -803,7 +1102,17 @@ const createManufacturer: RequestHandler = async (req, res) => {
 const updateManufacturer: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, website, logo_url, is_active } = req.body;
+    const {
+      name,
+      description,
+      website,
+      logo_url,
+      main_image,
+      extra_images,
+      category_id,
+      subcategory_id,
+      is_active,
+    } = req.body;
 
     const updates: string[] = [];
     const values: any[] = [];
@@ -823,6 +1132,22 @@ const updateManufacturer: RequestHandler = async (req, res) => {
     if (logo_url !== undefined) {
       updates.push("logo_url = ?");
       values.push(logo_url);
+    }
+    if (main_image !== undefined) {
+      updates.push("main_image = ?");
+      values.push(main_image);
+    }
+    if (extra_images !== undefined) {
+      updates.push("extra_images = ?");
+      values.push(extra_images);
+    }
+    if (category_id !== undefined) {
+      updates.push("category_id = ?");
+      values.push(category_id);
+    }
+    if (subcategory_id !== undefined) {
+      updates.push("subcategory_id = ?");
+      values.push(subcategory_id);
     }
     if (is_active !== undefined) {
       updates.push("is_active = ?");
@@ -891,8 +1216,20 @@ const deleteManufacturer: RequestHandler = async (req, res) => {
       success: true,
       message: "Manufacturer deleted successfully",
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error deleting manufacturer:", error);
+
+    if (
+      error.code === "ER_ROW_IS_REFERENCED_2" ||
+      error.code === "ER_ROW_IS_REFERENCED"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "No se puede eliminar este fabricante porque tiene marcas asociadas. Elimina las marcas primero.",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -903,7 +1240,16 @@ const deleteManufacturer: RequestHandler = async (req, res) => {
 // ==================== ADMIN BRANDS ====================
 const createBrand: RequestHandler = async (req, res) => {
   try {
-    const { name, manufacturer_id, description, logo_url } = req.body;
+    const {
+      name,
+      manufacturer_id,
+      description,
+      logo_url,
+      main_image,
+      extra_images,
+      category_id,
+      subcategory_id,
+    } = req.body;
 
     if (!name || !manufacturer_id) {
       return res.status(400).json({
@@ -913,9 +1259,18 @@ const createBrand: RequestHandler = async (req, res) => {
     }
 
     const [result] = await pool.execute(
-      `INSERT INTO brands (name, manufacturer_id, description, logo_url, is_active) 
-       VALUES (?, ?, ?, ?, 1)`,
-      [name, manufacturer_id, description || null, logo_url || null],
+      `INSERT INTO brands (name, manufacturer_id, description, logo_url, main_image, extra_images, category_id, subcategory_id, is_active) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+      [
+        name,
+        manufacturer_id,
+        description || null,
+        logo_url || null,
+        main_image || null,
+        extra_images || null,
+        category_id || null,
+        subcategory_id || null,
+      ],
     );
 
     const insertId = (result as any).insertId;
@@ -944,8 +1299,17 @@ const createBrand: RequestHandler = async (req, res) => {
 const updateBrand: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, manufacturer_id, description, logo_url, is_active } =
-      req.body;
+    const {
+      name,
+      manufacturer_id,
+      description,
+      logo_url,
+      main_image,
+      extra_images,
+      category_id,
+      subcategory_id,
+      is_active,
+    } = req.body;
 
     const updates: string[] = [];
     const values: any[] = [];
@@ -965,6 +1329,22 @@ const updateBrand: RequestHandler = async (req, res) => {
     if (logo_url !== undefined) {
       updates.push("logo_url = ?");
       values.push(logo_url);
+    }
+    if (main_image !== undefined) {
+      updates.push("main_image = ?");
+      values.push(main_image);
+    }
+    if (extra_images !== undefined) {
+      updates.push("extra_images = ?");
+      values.push(extra_images);
+    }
+    if (category_id !== undefined) {
+      updates.push("category_id = ?");
+      values.push(category_id);
+    }
+    if (subcategory_id !== undefined) {
+      updates.push("subcategory_id = ?");
+      values.push(subcategory_id);
     }
     if (is_active !== undefined) {
       updates.push("is_active = ?");
@@ -1032,8 +1412,20 @@ const deleteBrand: RequestHandler = async (req, res) => {
       success: true,
       message: "Brand deleted successfully",
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error deleting brand:", error);
+
+    if (
+      error.code === "ER_ROW_IS_REFERENCED_2" ||
+      error.code === "ER_ROW_IS_REFERENCED"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "No se puede eliminar esta marca porque tiene modelos asociados. Elimina los modelos primero.",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -1172,8 +1564,20 @@ const deleteModel: RequestHandler = async (req, res) => {
       success: true,
       message: "Model deleted successfully",
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error deleting model:", error);
+
+    if (
+      error.code === "ER_ROW_IS_REFERENCED_2" ||
+      error.code === "ER_ROW_IS_REFERENCED"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "No se puede eliminar este modelo porque tiene productos asociados. Elimina los productos primero.",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -2180,6 +2584,442 @@ const updateQuoteStatus: RequestHandler = async (req, res) => {
   }
 };
 
+// ==================== HOME SECTIONS ====================
+const getRandomSections: RequestHandler = async (req, res) => {
+  try {
+    const { count = "3", items_per_section = "4" } = req.query;
+    const sectionCount = Math.min(parseInt(count as string), 10);
+    const itemsPerSection = Math.min(parseInt(items_per_section as string), 10);
+
+    // Fetch more sections than needed to ensure we can find enough with items
+    const fetchLimit = Math.max(sectionCount * 3, 20);
+
+    const [categories] = await pool.execute(
+      `SELECT id, name, slug, description, main_image, 'category' as type
+       FROM categories WHERE is_active = TRUE ORDER BY RAND() LIMIT ?`,
+      [fetchLimit],
+    );
+
+    const [subcategories] = await pool.execute(
+      `SELECT s.id, s.name, s.slug, s.description, s.main_image, 'subcategory' as type,
+              s.category_id, c.name as category_name
+       FROM subcategories s
+       LEFT JOIN categories c ON s.category_id = c.id
+       WHERE s.is_active = TRUE ORDER BY RAND() LIMIT ?`,
+      [fetchLimit],
+    );
+
+    const [brands] = await pool.execute(
+      `SELECT b.id, b.name, b.description, b.main_image, 'brand' as type,
+              b.manufacturer_id, m.name as manufacturer_name,
+              b.category_id, c.name as category_name,
+              b.subcategory_id, s.name as subcategory_name
+       FROM brands b
+       LEFT JOIN manufacturers m ON b.manufacturer_id = m.id
+       LEFT JOIN categories c ON b.category_id = c.id
+       LEFT JOIN subcategories s ON b.subcategory_id = s.id
+       WHERE b.is_active = TRUE ORDER BY RAND() LIMIT ?`,
+      [fetchLimit],
+    );
+
+    const [manufacturers] = await pool.execute(
+      `SELECT m.id, m.name, m.description, m.main_image, 'manufacturer' as type,
+              m.category_id, c.name as category_name,
+              m.subcategory_id, s.name as subcategory_name
+       FROM manufacturers m
+       LEFT JOIN categories c ON m.category_id = c.id
+       LEFT JOIN subcategories s ON m.subcategory_id = s.id
+       WHERE m.is_active = TRUE ORDER BY RAND() LIMIT ?`,
+      [fetchLimit],
+    );
+
+    // Combine all sections and shuffle
+    const allSections: any[] = [
+      ...(categories as any[]),
+      ...(subcategories as any[]),
+      ...(brands as any[]),
+      ...(manufacturers as any[]),
+    ];
+
+    // Fisher-Yates shuffle
+    for (let i = allSections.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allSections[i], allSections[j]] = [allSections[j], allSections[i]];
+    }
+
+    // Keep checking sections until we have the requested count with items
+    const sectionsWithItems: any[] = [];
+
+    for (const section of allSections) {
+      let relatedItems: any[] = [];
+
+      switch (section.type) {
+        case "category":
+          // Get subcategories for this category
+          const [catSubcats] = await pool.execute(
+            `SELECT id, name, slug, main_image FROM subcategories 
+             WHERE category_id = ? AND is_active = TRUE ORDER BY RAND() LIMIT ?`,
+            [section.id, itemsPerSection],
+          );
+          relatedItems = catSubcats as any[];
+          break;
+
+        case "subcategory":
+          // Get brands for this subcategory
+          const [subcatBrands] = await pool.execute(
+            `SELECT id, name, main_image FROM brands 
+             WHERE subcategory_id = ? AND is_active = TRUE ORDER BY RAND() LIMIT ?`,
+            [section.id, itemsPerSection],
+          );
+          relatedItems = subcatBrands as any[];
+          break;
+
+        case "manufacturer":
+          // Get brands for this manufacturer
+          const [mfgBrands] = await pool.execute(
+            `SELECT id, name, main_image FROM brands 
+             WHERE manufacturer_id = ? AND is_active = TRUE ORDER BY RAND() LIMIT ?`,
+            [section.id, itemsPerSection],
+          );
+          relatedItems = mfgBrands as any[];
+          break;
+
+        case "brand":
+          // Get models for this brand or related subcategories
+          const [brandModels] = await pool.execute(
+            `SELECT id, name, description as main_image FROM models 
+             WHERE brand_id = ? AND is_active = TRUE ORDER BY RAND() LIMIT ?`,
+            [section.id, itemsPerSection],
+          );
+          relatedItems = brandModels as any[];
+          break;
+      }
+
+      // Only include sections that have items
+      if (relatedItems.length > 0) {
+        section.items = relatedItems;
+        sectionsWithItems.push(section);
+
+        // Stop once we have enough sections with items
+        if (sectionsWithItems.length >= sectionCount) {
+          break;
+        }
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: sectionsWithItems,
+    });
+  } catch (error) {
+    console.error("Get random sections error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+// Get filtered catalog data with advanced filtering
+const getCatalogData: RequestHandler = async (req, res) => {
+  try {
+    const {
+      type, // 'category', 'subcategory', 'brand', 'manufacturer'
+      id,
+      category_id,
+      subcategory_id,
+      brand_id,
+      manufacturer_id,
+    } = req.query;
+
+    const response: any = {
+      success: true,
+      data: {
+        mainItem: null,
+        relatedCategories: [],
+        relatedSubcategories: [],
+        relatedBrands: [],
+        relatedManufacturers: [],
+      },
+    };
+
+    // Fetch main item based on type
+    if (type && id) {
+      const itemId = parseInt(id as string);
+
+      switch (type) {
+        case "category": {
+          const [categories] = await pool.execute(
+            `SELECT * FROM categories WHERE id = ? AND is_active = TRUE`,
+            [itemId],
+          );
+          response.data.mainItem = (categories as any[])[0] || null;
+
+          // Get subcategories for this category
+          const [subcats] = await pool.execute(
+            `SELECT * FROM subcategories WHERE category_id = ? AND is_active = TRUE ORDER BY name`,
+            [itemId],
+          );
+          response.data.relatedSubcategories = subcats;
+
+          // Get manufacturers for this category
+          const [mfgs] = await pool.execute(
+            `SELECT DISTINCT m.* FROM manufacturers m
+             WHERE m.category_id = ? AND m.is_active = TRUE ORDER BY m.name`,
+            [itemId],
+          );
+          response.data.relatedManufacturers = mfgs;
+
+          // Get brands for this category
+          const [brds] = await pool.execute(
+            `SELECT DISTINCT b.*, m.name as manufacturer_name
+             FROM brands b
+             LEFT JOIN manufacturers m ON b.manufacturer_id = m.id
+             WHERE b.category_id = ? AND b.is_active = TRUE ORDER BY b.name`,
+            [itemId],
+          );
+          response.data.relatedBrands = brds;
+          break;
+        }
+
+        case "subcategory": {
+          const [subcategories] = await pool.execute(
+            `SELECT s.*, c.name as category_name, c.id as category_id
+             FROM subcategories s
+             LEFT JOIN categories c ON s.category_id = c.id
+             WHERE s.id = ? AND s.is_active = TRUE`,
+            [itemId],
+          );
+          response.data.mainItem = (subcategories as any[])[0] || null;
+
+          if (response.data.mainItem) {
+            // Get parent category
+            const [cats] = await pool.execute(
+              `SELECT * FROM categories WHERE id = ? AND is_active = TRUE`,
+              [response.data.mainItem.category_id],
+            );
+            response.data.relatedCategories = cats;
+
+            // Get manufacturers for this subcategory
+            const [mfgs] = await pool.execute(
+              `SELECT DISTINCT m.*, c.name as category_name
+               FROM manufacturers m
+               LEFT JOIN categories c ON m.category_id = c.id
+               WHERE m.subcategory_id = ? AND m.is_active = TRUE ORDER BY m.name`,
+              [itemId],
+            );
+            response.data.relatedManufacturers = mfgs;
+
+            // Get brands for this subcategory
+            const [brds] = await pool.execute(
+              `SELECT DISTINCT b.*, m.name as manufacturer_name, c.name as category_name
+               FROM brands b
+               LEFT JOIN manufacturers m ON b.manufacturer_id = m.id
+               LEFT JOIN categories c ON b.category_id = c.id
+               WHERE b.subcategory_id = ? AND b.is_active = TRUE ORDER BY b.name`,
+              [itemId],
+            );
+            response.data.relatedBrands = brds;
+          }
+          break;
+        }
+
+        case "brand": {
+          const [brands] = await pool.execute(
+            `SELECT b.*, 
+                    m.name as manufacturer_name, m.id as manufacturer_id,
+                    c.name as category_name, c.id as category_id,
+                    s.name as subcategory_name, s.id as subcategory_id
+             FROM brands b
+             LEFT JOIN manufacturers m ON b.manufacturer_id = m.id
+             LEFT JOIN categories c ON b.category_id = c.id
+             LEFT JOIN subcategories s ON b.subcategory_id = s.id
+             WHERE b.id = ? AND b.is_active = TRUE`,
+            [itemId],
+          );
+          response.data.mainItem = (brands as any[])[0] || null;
+
+          if (response.data.mainItem) {
+            // Get related categories
+            if (response.data.mainItem.category_id) {
+              const [cats] = await pool.execute(
+                `SELECT * FROM categories WHERE id = ? AND is_active = TRUE`,
+                [response.data.mainItem.category_id],
+              );
+              response.data.relatedCategories = cats;
+            }
+
+            // Get related subcategories
+            if (response.data.mainItem.subcategory_id) {
+              const [subcats] = await pool.execute(
+                `SELECT * FROM subcategories WHERE id = ? AND is_active = TRUE`,
+                [response.data.mainItem.subcategory_id],
+              );
+              response.data.relatedSubcategories = subcats;
+            }
+
+            // Get related manufacturer
+            if (response.data.mainItem.manufacturer_id) {
+              const [mfgs] = await pool.execute(
+                `SELECT * FROM manufacturers WHERE id = ? AND is_active = TRUE`,
+                [response.data.mainItem.manufacturer_id],
+              );
+              response.data.relatedManufacturers = mfgs;
+            }
+          }
+          break;
+        }
+
+        case "manufacturer": {
+          const [manufacturers] = await pool.execute(
+            `SELECT m.*, 
+                    c.name as category_name, c.id as category_id,
+                    s.name as subcategory_name, s.id as subcategory_id
+             FROM manufacturers m
+             LEFT JOIN categories c ON m.category_id = c.id
+             LEFT JOIN subcategories s ON m.subcategory_id = s.id
+             WHERE m.id = ? AND m.is_active = TRUE`,
+            [itemId],
+          );
+          response.data.mainItem = (manufacturers as any[])[0] || null;
+
+          if (response.data.mainItem) {
+            // Get related categories
+            if (response.data.mainItem.category_id) {
+              const [cats] = await pool.execute(
+                `SELECT * FROM categories WHERE id = ? AND is_active = TRUE`,
+                [response.data.mainItem.category_id],
+              );
+              response.data.relatedCategories = cats;
+            }
+
+            // Get related subcategories
+            if (response.data.mainItem.subcategory_id) {
+              const [subcats] = await pool.execute(
+                `SELECT * FROM subcategories WHERE id = ? AND is_active = TRUE`,
+                [response.data.mainItem.subcategory_id],
+              );
+              response.data.relatedSubcategories = subcats;
+            }
+
+            // Get brands for this manufacturer
+            const [brds] = await pool.execute(
+              `SELECT b.*, c.name as category_name, s.name as subcategory_name
+               FROM brands b
+               LEFT JOIN categories c ON b.category_id = c.id
+               LEFT JOIN subcategories s ON b.subcategory_id = s.id
+               WHERE b.manufacturer_id = ? AND b.is_active = TRUE ORDER BY b.name`,
+              [itemId],
+            );
+            response.data.relatedBrands = brds;
+          }
+          break;
+        }
+      }
+    }
+
+    // Additional filtering logic for advanced search
+    // If filters are provided without a main item
+    if (!type || !id) {
+      const conditions: string[] = [];
+      const params: any[] = [];
+
+      // If no filters at all, return all categories
+      if (!category_id && !subcategory_id && !brand_id && !manufacturer_id) {
+        const [allCategories] = await pool.execute(
+          `SELECT * FROM categories WHERE is_active = TRUE ORDER BY name`,
+        );
+        response.data.relatedCategories = allCategories;
+      }
+
+      // Build dynamic query based on filters
+      if (category_id) {
+        const catId = parseInt(category_id as string);
+
+        // Get subcategories
+        const [subcats] = await pool.execute(
+          `SELECT * FROM subcategories WHERE category_id = ? AND is_active = TRUE ORDER BY name`,
+          [catId],
+        );
+        response.data.relatedSubcategories = subcats;
+
+        // Get manufacturers
+        const [mfgs] = await pool.execute(
+          `SELECT DISTINCT m.*, c.name as category_name, s.name as subcategory_name
+           FROM manufacturers m
+           LEFT JOIN categories c ON m.category_id = c.id
+           LEFT JOIN subcategories s ON m.subcategory_id = s.id
+           WHERE m.category_id = ? AND m.is_active = TRUE ORDER BY m.name`,
+          [catId],
+        );
+        response.data.relatedManufacturers = mfgs;
+
+        // Get brands
+        const [brds] = await pool.execute(
+          `SELECT DISTINCT b.*, m.name as manufacturer_name, c.name as category_name, s.name as subcategory_name
+           FROM brands b
+           LEFT JOIN manufacturers m ON b.manufacturer_id = m.id
+           LEFT JOIN categories c ON b.category_id = c.id
+           LEFT JOIN subcategories s ON b.subcategory_id = s.id
+           WHERE b.category_id = ? AND b.is_active = TRUE ORDER BY b.name`,
+          [catId],
+        );
+        response.data.relatedBrands = brds;
+      }
+
+      if (subcategory_id) {
+        const subcatId = parseInt(subcategory_id as string);
+
+        // Get manufacturers
+        const [mfgs] = await pool.execute(
+          `SELECT DISTINCT m.*, c.name as category_name, s.name as subcategory_name
+           FROM manufacturers m
+           LEFT JOIN categories c ON m.category_id = c.id
+           LEFT JOIN subcategories s ON m.subcategory_id = s.id
+           WHERE m.subcategory_id = ? AND m.is_active = TRUE ORDER BY m.name`,
+          [subcatId],
+        );
+        response.data.relatedManufacturers = mfgs;
+
+        // Get brands
+        const [brds] = await pool.execute(
+          `SELECT DISTINCT b.*, m.name as manufacturer_name, c.name as category_name, s.name as subcategory_name
+           FROM brands b
+           LEFT JOIN manufacturers m ON b.manufacturer_id = m.id
+           LEFT JOIN categories c ON b.category_id = c.id
+           LEFT JOIN subcategories s ON b.subcategory_id = s.id
+           WHERE b.subcategory_id = ? AND b.is_active = TRUE ORDER BY b.name`,
+          [subcatId],
+        );
+        response.data.relatedBrands = brds;
+      }
+
+      if (manufacturer_id) {
+        const mfgId = parseInt(manufacturer_id as string);
+
+        // Get brands for this manufacturer
+        const [brds] = await pool.execute(
+          `SELECT b.*, c.name as category_name, s.name as subcategory_name
+           FROM brands b
+           LEFT JOIN categories c ON b.category_id = c.id
+           LEFT JOIN subcategories s ON b.subcategory_id = s.id
+           WHERE b.manufacturer_id = ? AND b.is_active = TRUE ORDER BY b.name`,
+          [mfgId],
+        );
+        response.data.relatedBrands = brds;
+      }
+    }
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error("Get catalog data error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
 // ==================== EXPRESS SERVER SETUP ====================
 let app: express.Application | null = null;
 
@@ -2221,6 +3061,10 @@ function createServer() {
   expressApp.get("/api/products", getProducts);
   expressApp.get("/api/products/:id", getProductById);
 
+  // Home Sections
+  expressApp.get("/api/home/sections", getRandomSections);
+  expressApp.get("/api/catalog", getCatalogData);
+
   // Quotes
   expressApp.get("/api/quotes", getQuotes);
   expressApp.get("/api/quotes/:id", getQuoteById);
@@ -2238,6 +3082,12 @@ function createServer() {
   expressApp.post("/api/admin/categories", createCategory);
   expressApp.put("/api/admin/categories/:id", updateCategory);
   expressApp.delete("/api/admin/categories/:id", deleteCategory);
+
+  // Admin Subcategories (protected)
+  expressApp.get("/api/admin/subcategories", getSubcategories);
+  expressApp.post("/api/admin/subcategories", createSubcategory);
+  expressApp.put("/api/admin/subcategories/:id", updateSubcategory);
+  expressApp.delete("/api/admin/subcategories/:id", deleteSubcategory);
 
   // Admin Manufacturers (protected)
   expressApp.get("/api/admin/manufacturers", getManufacturers);

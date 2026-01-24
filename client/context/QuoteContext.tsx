@@ -8,6 +8,14 @@ export interface SelectedProduct {
   quantity: number;
 }
 
+export interface QuotePrefillData {
+  brand?: string;
+  brand_id?: number;
+  manufacturer_id?: number;
+  category_id?: number;
+  subcategory_id?: number;
+}
+
 interface QuoteContextType {
   selectedProducts: SelectedProduct[];
   addProduct: (product: SelectedProduct) => void;
@@ -15,8 +23,12 @@ interface QuoteContextType {
   updateProductQuantity: (id: string, quantity: number) => void;
   clearProducts: () => void;
   isWizardOpen: boolean;
+  isNewWizardOpen: boolean;
   openWizard: () => void;
   closeWizard: () => void;
+  openNewWizard: (prefillData?: QuotePrefillData) => void;
+  closeNewWizard: () => void;
+  prefillData: QuotePrefillData | undefined;
 }
 
 const QuoteContext = createContext<QuoteContextType | undefined>(undefined);
@@ -28,6 +40,10 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({
     [],
   );
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isNewWizardOpen, setIsNewWizardOpen] = useState(false);
+  const [prefillData, setPrefillData] = useState<QuotePrefillData | undefined>(
+    undefined,
+  );
 
   const addProduct = (product: SelectedProduct) => {
     setSelectedProducts((prev) => {
@@ -69,6 +85,16 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsWizardOpen(false);
   };
 
+  const openNewWizard = (data?: QuotePrefillData) => {
+    setPrefillData(data);
+    setIsNewWizardOpen(true);
+  };
+
+  const closeNewWizard = () => {
+    setIsNewWizardOpen(false);
+    setPrefillData(undefined);
+  };
+
   return (
     <QuoteContext.Provider
       value={{
@@ -78,8 +104,12 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({
         updateProductQuantity,
         clearProducts,
         isWizardOpen,
+        isNewWizardOpen,
         openWizard,
         closeWizard,
+        openNewWizard,
+        closeNewWizard,
+        prefillData,
       }}
     >
       {children}

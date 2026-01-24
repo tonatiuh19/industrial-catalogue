@@ -14,6 +14,7 @@ import { LoadingMask } from "@/components/LoadingMask";
 import { useGlobalLoading } from "@/store/StoreContext";
 import Home from "./pages/Home";
 import Catalogue from "./pages/Catalogue";
+import DynamicCatalog from "./pages/DynamicCatalog";
 import ProductDetail from "./pages/ProductDetail";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
@@ -39,7 +40,7 @@ const AppContent = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/catalog" element={<Catalogue />} />
+          <Route path="/catalog" element={<DynamicCatalog />} />
           <Route path="/product/:id" element={<ProductDetail />} />
 
           {/* Admin Routes */}

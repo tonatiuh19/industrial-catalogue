@@ -111,18 +111,11 @@ export default function AdminLogin() {
         <div className="relative flex flex-col justify-center space-y-8 p-12 xl:p-16">
           <div className="space-y-4 animate-fade-in">
             <div className="flex items-center space-x-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-white rounded-2xl blur-xl opacity-30 animate-pulse"></div>
-                <div className="relative bg-white/20 backdrop-blur-sm p-4 rounded-2xl shadow-2xl border border-white/30">
-                  <ShieldCheck className="h-14 w-14 text-white" />
-                </div>
-              </div>
-              <div>
-                <h1 className="text-5xl font-bold text-white">Admin Panel</h1>
-                <p className="text-xl text-white/80 mt-1">
-                  Industrial Catalogue Management
-                </p>
-              </div>
+              <img
+                src="https://disruptinglabs.com/data/trenor/assets/images/logo_white_trenor.png"
+                alt="Trenor Logo"
+                className="h-16 w-auto object-contain"
+              />
             </div>
           </div>
 
