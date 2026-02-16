@@ -14,6 +14,9 @@ export interface QuotePrefillData {
   manufacturer_id?: number;
   category_id?: number;
   subcategory_id?: number;
+  part_number?: string;
+  product_type?: string;
+  description?: string;
 }
 
 interface QuoteContextType {

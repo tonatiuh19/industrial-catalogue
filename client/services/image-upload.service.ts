@@ -258,5 +258,114 @@ export function getImageUrl(path: string): string {
   if (path.startsWith("http")) {
     return path;
   }
-  return `https://disruptinglabs.com/data/api/${path}`;
+
+  // Remove leading slash from path to avoid double slashes
+  const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  return `https://disruptinglabs.com/data/api/${cleanPath}`;
+}
+
+// ==================== REFERENCE DATA IMAGE UPLOADS ====================
+
+/**
+ * Upload images for categories
+ * Uses prefixed ID: cat_{id} (compatible with existing PHP API)
+ */
+export async function uploadCategoryImages(
+  categoryId: string | number,
+  mainImage?: File,
+  extraImages?: File[],
+): Promise<ImageUploadResult> {
+  return uploadImages(`cat_${categoryId}`, mainImage, extraImages);
+}
+
+/**
+ * Upload images for subcategories
+ * Uses prefixed ID: sub_{id} (compatible with existing PHP API)
+ */
+export async function uploadSubcategoryImages(
+  subcategoryId: string | number,
+  mainImage?: File,
+  extraImages?: File[],
+): Promise<ImageUploadResult> {
+  return uploadImages(`sub_${subcategoryId}`, mainImage, extraImages);
+}
+
+/**
+ * Upload images for manufacturers
+ * Uses prefixed ID: mfg_{id} (compatible with existing PHP API)
+ */
+export async function uploadManufacturerImages(
+  manufacturerId: string | number,
+  mainImage?: File,
+  extraImages?: File[],
+): Promise<ImageUploadResult> {
+  return uploadImages(`mfg_${manufacturerId}`, mainImage, extraImages);
+}
+
+/**
+ * Upload images for brands
+ * Uses prefixed ID: brand_{id} (compatible with existing PHP API)
+ */
+export async function uploadBrandImages(
+  brandId: string | number,
+  mainImage?: File,
+  extraImages?: File[],
+): Promise<ImageUploadResult> {
+  return uploadImages(`brand_${brandId}`, mainImage, extraImages);
+}
+
+/**
+ * Get entity prefix for a given entity type
+ */
+function getEntityPrefix(
+  entityType: "categories" | "subcategories" | "manufacturers" | "brands",
+): string {
+  const prefixMap = {
+    categories: "cat",
+    subcategories: "sub",
+    manufacturers: "mfg",
+    brands: "brand",
+  };
+  return prefixMap[entityType];
+}
+
+/**
+ * Delete image for reference data entities
+ * Uses prefixed ID (compatible with existing PHP API)
+ */
+export async function deleteReferenceDataImage(
+  entityType: "categories" | "subcategories" | "manufacturers" | "brands",
+  entityId: string | number,
+  filename: string,
+  imageType: "main" | "extra" = "main",
+): Promise<{ success: boolean; error?: string; message?: string }> {
+  const prefix = getEntityPrefix(entityType);
+  return deleteImage(`${prefix}_${entityId}`, filename, imageType);
+}
+
+/**
+ * Update/replace image for reference data entities
+ * Uses prefixed ID (compatible with existing PHP API)
+ */
+export async function updateReferenceDataImage(
+  entityType: "categories" | "subcategories" | "manufacturers" | "brands",
+  entityId: string | number,
+  oldFilename: string,
+  newImage: File,
+  imageType: "main" | "extra" = "main",
+): Promise<ImageUploadResult> {
+  const prefix = getEntityPrefix(entityType);
+  return updateImage(`${prefix}_${entityId}`, oldFilename, newImage, imageType);
+}
+
+/**
+ * List images for reference data entities
+ * Uses prefixed ID (compatible with existing PHP API)
+ */
+export async function listReferenceDataImages(
+  entityType: "categories" | "subcategories" | "manufacturers" | "brands",
+  entityId: string | number,
+): Promise<ImageListResult> {
+  const prefix = getEntityPrefix(entityType);
+  return listImages(`${prefix}_${entityId}`);
 }

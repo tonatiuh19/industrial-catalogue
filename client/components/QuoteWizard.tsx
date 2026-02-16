@@ -301,7 +301,7 @@ const QuoteWizard = () => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      placeholder="+52 1234567890"
+                      placeholder="477 599 0905"
                       className="w-full px-3 sm:px-4 py-2.5 sm:py-2 border border-steel-200 rounded-lg text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all"
                     />
                   </div>

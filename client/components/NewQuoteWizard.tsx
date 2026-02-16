@@ -24,6 +24,9 @@ interface QuoteWizardProps {
     manufacturer_id?: number;
     category_id?: number;
     subcategory_id?: number;
+    part_number?: string;
+    product_type?: string;
+    description?: string;
   };
 }
 
@@ -58,6 +61,18 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
     Subcategory[]
   >([]);
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "unset";
+      };
+    } else {
+      document.body.style.overflow = "unset";
+    }
+  }, [isOpen]);
+
   // Dropdown states
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -66,9 +81,9 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
   const [formData, setFormData] = useState<CreateQuoteRequest>({
     // Step 1: Product Information
     brand: prefillData?.brand || "",
-    product_type: "",
-    part_number: "",
-    specifications: "",
+    product_type: prefillData?.product_type || "",
+    part_number: prefillData?.part_number || "",
+    specifications: prefillData?.description || "",
     brand_id: prefillData?.brand_id,
     manufacturer_id: prefillData?.manufacturer_id,
     category_id: prefillData?.category_id,
@@ -89,6 +104,23 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
       fetchData();
     }
   }, [isOpen]);
+
+  // Update form data when prefillData changes
+  useEffect(() => {
+    if (prefillData) {
+      setFormData((prev) => ({
+        ...prev,
+        brand: prefillData.brand || prev.brand,
+        product_type: prefillData.product_type || prev.product_type,
+        part_number: prefillData.part_number || prev.part_number,
+        specifications: prefillData.description || prev.specifications,
+        brand_id: prefillData.brand_id || prev.brand_id,
+        manufacturer_id: prefillData.manufacturer_id || prev.manufacturer_id,
+        category_id: prefillData.category_id || prev.category_id,
+        subcategory_id: prefillData.subcategory_id || prev.subcategory_id,
+      }));
+    }
+  }, [prefillData]);
 
   // Filter subcategories based on selected category
   useEffect(() => {
@@ -213,9 +245,9 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
           setCurrentStep(1);
           setFormData({
             brand: prefillData?.brand || "",
-            product_type: "",
-            part_number: "",
-            specifications: "",
+            product_type: prefillData?.product_type || "",
+            part_number: prefillData?.part_number || "",
+            specifications: prefillData?.description || "",
             brand_id: prefillData?.brand_id,
             manufacturer_id: prefillData?.manufacturer_id,
             category_id: prefillData?.category_id,
@@ -243,34 +275,40 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-6xl max-h-[95vh] overflow-hidden rounded-2xl shadow-2xl flex flex-col lg:flex-row animate-in slide-in-from-bottom duration-300">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full max-w-md sm:max-w-2xl lg:max-w-6xl max-h-[95vh] overflow-hidden rounded-xl sm:rounded-2xl shadow-2xl flex flex-col lg:flex-row animate-in slide-in-from-bottom duration-300 my-2 sm:my-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Left Side - Form */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-primary to-steel-800 text-white px-6 py-5 flex items-center justify-between border-b border-steel-700">
+          <div className="bg-gradient-to-r from-primary to-steel-800 text-white px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between border-b border-steel-700">
             <div>
-              <h2 className="text-2xl font-bold">
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold leading-tight">
                 Solicita tu cotización industrial
               </h2>
-              <p className="text-sm text-steel-200 mt-1">
+              <p className="text-xs sm:text-sm text-steel-200 mt-1">
                 Paso {currentStep} de 2
               </p>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:bg-white/10 p-2 rounded-lg transition-colors"
+              className="text-white hover:bg-white/10 p-1.5 sm:p-2 rounded-lg transition-colors"
             >
-              <X size={24} />
+              <X size={20} className="sm:w-6 sm:h-6" />
             </button>
           </div>
 
           {/* Stepper */}
-          <div className="bg-white border-b border-steel-200 px-6 py-5">
-            <div className="flex items-center justify-center gap-4">
+          <div className="bg-white border-b border-steel-200 px-3 sm:px-6 py-3 sm:py-5">
+            <div className="flex items-center justify-center gap-2 sm:gap-4">
               <div className="flex items-center">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition-all duration-300 ${
                     currentStep === 1
                       ? "bg-accent text-white scale-110 shadow-lg"
                       : currentStep > 1
@@ -278,20 +316,27 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
                         : "bg-steel-200 text-steel-600"
                   }`}
                 >
-                  {currentStep > 1 ? <Check size={20} /> : "1"}
+                  {currentStep > 1 ? (
+                    <Check size={16} className="sm:w-5 sm:h-5" />
+                  ) : (
+                    "1"
+                  )}
                 </div>
                 <span
-                  className={`ml-2 font-semibold text-sm ${currentStep === 1 ? "text-accent" : "text-steel-600"}`}
+                  className={`ml-2 font-semibold text-xs sm:text-sm ${currentStep === 1 ? "text-accent" : "text-steel-600"}`}
                 >
-                  Información del producto
+                  <span className="hidden sm:inline">
+                    Información del producto
+                  </span>
+                  <span className="sm:hidden">Producto</span>
                 </span>
               </div>
               <div
-                className={`h-1 w-16 rounded transition-all duration-300 ${currentStep > 1 ? "bg-primary" : "bg-steel-200"}`}
+                className={`h-0.5 sm:h-1 w-12 sm:w-16 rounded transition-all duration-300 ${currentStep > 1 ? "bg-primary" : "bg-steel-200"}`}
               />
               <div className="flex items-center">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition-all duration-300 ${
                     currentStep === 2
                       ? "bg-accent text-white scale-110 shadow-lg"
                       : "bg-steel-200 text-steel-600"
@@ -300,35 +345,36 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
                   2
                 </div>
                 <span
-                  className={`ml-2 font-semibold text-sm ${currentStep === 2 ? "text-accent" : "text-steel-600"}`}
+                  className={`ml-2 font-semibold text-xs sm:text-sm ${currentStep === 2 ? "text-accent" : "text-steel-600"}`}
                 >
-                  Datos de contacto
+                  <span className="hidden sm:inline">Datos de contacto</span>
+                  <span className="sm:hidden">Contacto</span>
                 </span>
               </div>
             </div>
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-5">
             {/* Step 1: Product Information */}
             {currentStep === 1 && (
-              <div className="space-y-5 animate-in slide-in-from-right duration-300">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                    <Package className="w-6 h-6 text-accent" />
+              <div className="space-y-3 sm:space-y-5 animate-in slide-in-from-right duration-300">
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-accent/10 flex items-center justify-center">
+                    <Package className="w-5 h-5 sm:w-6 sm:h-6 text-accent" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-primary">
+                    <h3 className="text-lg sm:text-xl font-bold text-primary">
                       ¿Qué necesitas?
                     </h3>
-                    <p className="text-sm text-steel-600">
+                    <p className="text-xs sm:text-sm text-steel-600">
                       Cuéntanos sobre el producto industrial que buscas
                     </p>
                   </div>
                 </div>
 
                 <div className="relative">
-                  <label className="block text-sm font-bold text-primary mb-2">
+                  <label className="block text-xs sm:text-sm font-bold text-primary mb-1 sm:mb-2">
                     Marca
                   </label>
                   <div className="relative">
@@ -341,10 +387,10 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
                         setShowBrandDropdown(true);
                       }}
                       onFocus={() => setShowBrandDropdown(true)}
-                      placeholder="Ej: SKF, NSK, ABB, Siemens, Baldor, Gates"
-                      className="w-full px-4 py-3 border-2 border-steel-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all pr-10"
+                      placeholder="Ej: SKF, NSK, ABB, Siemens"
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-steel-200 rounded-lg sm:rounded-xl text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all pr-8 sm:pr-10"
                     />
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-steel-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-steel-400 pointer-events-none" />
                   </div>
                   {showBrandDropdown && (
                     <>
@@ -352,7 +398,7 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
                         className="fixed inset-0 z-10"
                         onClick={() => setShowBrandDropdown(false)}
                       />
-                      <div className="absolute z-20 w-full mt-2 bg-white border-2 border-steel-200 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                      <div className="absolute z-20 w-full mt-1 sm:mt-2 bg-white border-2 border-steel-200 rounded-lg sm:rounded-xl shadow-xl max-h-48 sm:max-h-60 overflow-y-auto">
                         {brands
                           .filter((brand) =>
                             brand.name
@@ -364,7 +410,7 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
                               key={brand.id}
                               type="button"
                               onClick={() => handleBrandSelect(brand)}
-                              className="w-full px-4 py-3 text-left hover:bg-accent/10 transition-colors text-steel-700 hover:text-primary font-medium"
+                              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-left hover:bg-accent/10 transition-colors text-steel-700 hover:text-primary font-medium text-sm sm:text-base"
                             >
                               {brand.name}
                             </button>
@@ -389,7 +435,12 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
                     </>
                   )}
                   <p className="text-xs text-steel-500 mt-1">
-                    Selecciona de la lista o escribe una nueva marca
+                    <span className="hidden sm:inline">
+                      Selecciona de la lista o escribe una nueva marca
+                    </span>
+                    <span className="sm:hidden">
+                      Selecciona o escribe nueva marca
+                    </span>
                   </p>
                 </div>
 
@@ -648,7 +699,7 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
                       name="customer_phone"
                       value={formData.customer_phone}
                       onChange={handleInputChange}
-                      placeholder="+52 1234567890"
+                      placeholder="477 599 0905"
                       className="w-full px-4 py-3 border-2 border-steel-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all"
                       required
                     />
@@ -767,40 +818,45 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
           </div>
 
           {/* Footer with buttons */}
-          <div className="border-t border-steel-200 px-6 py-4 bg-steel-50 flex items-center justify-between">
+          <div className="border-t border-steel-200 px-3 sm:px-6 py-3 sm:py-4 bg-steel-50 flex items-center justify-between gap-3">
             <button
               onClick={handlePreviousStep}
               disabled={currentStep === 1}
-              className="flex items-center gap-2 px-6 py-3 border-2 border-steel-300 rounded-xl text-primary font-bold hover:bg-steel-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2.5 sm:py-3 border-2 border-steel-300 rounded-lg sm:rounded-xl text-primary font-bold hover:bg-steel-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 text-sm sm:text-base"
             >
-              <ChevronLeft size={20} />
-              Anterior
+              <ChevronLeft size={18} className="sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">Anterior</span>
+              <span className="sm:hidden">Atrás</span>
             </button>
 
             {currentStep === 1 ? (
               <button
                 onClick={handleNextStep}
                 disabled={!isStep1Valid}
-                className="flex items-center gap-2 px-8 py-3 bg-accent text-white rounded-xl font-bold hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg"
+                className="flex items-center gap-1 sm:gap-2 px-4 sm:px-8 py-2.5 sm:py-3 bg-accent text-white rounded-lg sm:rounded-xl font-bold hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg text-sm sm:text-base"
               >
                 Continuar
-                <ChevronRight size={20} />
+                <ChevronRight size={18} className="sm:w-5 sm:h-5" />
               </button>
             ) : (
               <button
                 onClick={handleSubmit}
                 disabled={!isStep2Valid || isSubmitting}
-                className="flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-xl font-bold hover:bg-steel-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg"
+                className="flex items-center gap-1 sm:gap-2 px-4 sm:px-8 py-2.5 sm:py-3 bg-primary text-white rounded-lg sm:rounded-xl font-bold hover:bg-steel-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg text-sm sm:text-base"
               >
                 {isSubmitting ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    Enviando...
+                    <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
+                    <span className="hidden sm:inline">Enviando...</span>
+                    <span className="sm:hidden">...</span>
                   </>
                 ) : (
                   <>
-                    <Check size={20} />
-                    Solicitar cotización
+                    <Check size={18} className="sm:w-5 sm:h-5" />
+                    <span className="hidden sm:inline">
+                      Solicitar cotización
+                    </span>
+                    <span className="sm:hidden">Solicitar</span>
                   </>
                 )}
               </button>

@@ -75,23 +75,6 @@ export default function AdminHome() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-primary/5 to-primary/10">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-primary">
-              Total de Productos
-            </CardTitle>
-            <div className="bg-primary rounded-lg p-2">
-              <Package className="h-4 w-4 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">
-              {productsTotal}
-            </div>
-            <p className="text-xs text-slate-600">Productos en catálogo</p>
-          </CardContent>
-        </Card>
-
         <Card className="border-0 shadow-sm bg-gradient-to-br from-accent/5 to-accent/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-accent">

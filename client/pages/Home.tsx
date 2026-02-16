@@ -23,6 +23,9 @@ import * as MdIcons from "react-icons/md";
 import { IconType } from "react-icons";
 import SEO from "@/components/SEO";
 import NewQuoteWizard from "@/components/NewQuoteWizard";
+import Footer from "@/components/Footer";
+import HeroCarousel from "@/components/HeroCarousel";
+import QuickQuoteForm from "@/components/QuickQuoteForm";
 import { useQuote } from "@/context/QuoteContext";
 import { getImageUrl } from "@/services/image-upload.service";
 import { homeSectionsApi } from "@/services/api.service";
@@ -53,10 +56,12 @@ interface CategoryWithIcon {
   name: string;
   description: string | null;
   slug: string;
+  main_image?: string | null;
 }
 
 export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showFloatingButton, setShowFloatingButton] = useState(false);
   const [sections, setSections] = useState<HomeSectionItem[]>([]);
   const [brands, setBrands] = useState<Array<{ id: number; name: string }>>([]);
   const [categories, setCategories] = useState<CategoryWithIcon[]>([]);
@@ -66,9 +71,18 @@ export default function Home() {
   const { isNewWizardOpen, openNewWizard, closeNewWizard, prefillData } =
     useQuote();
 
+  // Debug logging for wizard state
+  useEffect(() => {
+    console.log("Wizard state changed:", { isNewWizardOpen, prefillData });
+  }, [isNewWizardOpen, prefillData]);
+
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 300);
+      const scrollY = window.scrollY;
+      setIsScrolled(scrollY > 300);
+
+      // Show floating button after scrolling past the quotation form (approximately 800px)
+      setShowFloatingButton(scrollY > 800);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -187,6 +201,18 @@ export default function Home() {
     }
   };
 
+  const handleQuoteSubmit = (data: {
+    brand?: string;
+    brand_id?: number;
+    category_id?: number;
+    part_number?: string;
+    product_type?: string;
+    description?: string;
+  }) => {
+    console.log("Opening wizard with complete prefill data:", data);
+    openNewWizard(data);
+  };
+
   return (
     <div className="min-h-screen">
       <SEO
@@ -214,7 +240,7 @@ export default function Home() {
             />
           </Link>
           <nav className="hidden md:flex items-center gap-6 lg:gap-8">
-            <a
+            {/* <a
               href="#features"
               className={`font-medium text-sm lg:text-base transition-colors duration-300 ${
                 isScrolled
@@ -233,7 +259,7 @@ export default function Home() {
               }`}
             >
               Por qué nosotros
-            </a>
+            </a> */}
             <Link
               to="/catalog"
               className={`px-4 lg:px-6 py-2 font-semibold text-sm lg:text-base rounded-lg transition-all duration-300 ${
@@ -258,79 +284,69 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section - Compact */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary via-steel-800 to-steel-950">
-        {/* Background Video with Image Fallback */}
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Video Background */}
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover opacity-30"
-            poster="https://disruptinglabs.com/data/api/data/industrial_catalogue/images/pexels-vladimirsrajber-18631420.jpg"
-            onError={(e) => {
-              // Hide video on error, fallback to poster image
-              e.currentTarget.style.display = "none";
-            }}
-          >
-            <source
-              src="https://disruptinglabs.com/data/api/data/industrial_catalogue/videos/6450803-sd_960_540_25fps.mp4"
-              type="video/mp4"
-            />
-            {/* Fallback image if video doesn't load */}
-            <img
-              src="https://disruptinglabs.com/data/api/data/industrial_catalogue/images/pexels-vladimirsrajber-18631420.jpg"
-              alt="Industrial background"
-              className="w-full h-full object-cover"
-            />
-          </video>
+      {/* Hero Carousel */}
+      <HeroCarousel />
 
-          {/* Dark overlay for better text readability */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/80 via-steel-800/80 to-steel-950/90"></div>
-        </div>
+      {/* Quick Quote Form - Full Width After Hero */}
+      <QuickQuoteForm
+        brands={brands}
+        categories={categories}
+        onSubmit={handleQuoteSubmit}
+      />
 
-        {/* Background Pattern */}
-        <div className="absolute inset-0 grid-pattern opacity-5 z-[1]"></div>
-
-        {/* Hero Content */}
-        <div className="relative z-10 pt-24 sm:pt-32 pb-16 sm:pb-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center space-y-6 max-w-4xl mx-auto">
-              {/* Main Heading */}
-              <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black leading-tight text-white">
-                <span className="block">Donde la Calidad</span>
-                <span className="block bg-gradient-to-r from-[#c03818] via-orange-400 to-[#c03818] bg-clip-text text-transparent">
-                  Encuentra la Innovación
-                </span>
-              </h1>
-
-              {/* Description */}
-              <p className="text-base sm:text-lg lg:text-xl text-gray-200 max-w-2xl mx-auto">
-                Herramientas profesionales, equipamiento industrial y
-                componentes de precisión
-              </p>
-
-              {/* CTA Button */}
-              <div className="pt-4">
+      {/* Featured Random Sections - Simple Image Grid */}
+      <section className="py-12 sm:py-16 md:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {loading ? (
+              // Loading skeleton
+              [1, 2, 3].map((i) => (
+                <div key={i} className="bg-steel-100 rounded-2xl animate-pulse">
+                  <div className="aspect-video bg-steel-200 rounded-2xl"></div>
+                </div>
+              ))
+            ) : sections.length > 0 ? (
+              sections.map((section) => (
                 <Link
-                  to="/catalog"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#c03818] text-white font-bold text-base sm:text-lg rounded-xl hover:bg-[#d94520] hover:shadow-2xl hover:shadow-[#c03818]/50 transition-all duration-300 active:scale-95"
+                  key={`${section.type}-${section.id}`}
+                  to={`/catalog?type=${section.type}&id=${section.id}`}
+                  className="group block"
                 >
-                  Ver Catálogo Completo
-                  <ArrowRight
-                    size={20}
-                    className="group-hover:translate-x-1 transition-transform"
-                  />
+                  <div className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                    {section.main_image ? (
+                      <img
+                        src={getImageUrl(section.main_image)}
+                        alt={section.name}
+                        className="w-full aspect-video object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full aspect-video bg-steel-100 flex items-center justify-center">
+                        <Box className="w-12 h-12 sm:w-16 sm:h-16 text-steel-400" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                      <h3 className="text-lg sm:text-xl font-bold mb-1">
+                        {section.name}
+                      </h3>
+                      <p className="text-sm opacity-90">
+                        {getSectionTypeLabel(section.type)}
+                      </p>
+                    </div>
+                  </div>
                 </Link>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <Package className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-steel-400 mb-4" />
+                <p className="text-steel-600">No hay secciones disponibles</p>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Featured Sections - IMMEDIATELY AFTER HERO */}
+      {/* Featured Sections - Random Display */}
       <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-b from-steel-50 to-white">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12">
@@ -343,21 +359,21 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Dynamic Sections Grid - 3 Main Sections with 4 items each */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Dynamic Sections Grid - Mobile Optimized */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {loading ? (
               // Loading skeleton
               [1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-2xl border-2 border-steel-200 p-6 animate-pulse"
+                  className="bg-white rounded-2xl border-2 border-steel-200 p-4 sm:p-6 animate-pulse"
                 >
-                  <div className="h-8 bg-steel-200 rounded mb-6 w-3/4"></div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="h-6 sm:h-8 bg-steel-200 rounded mb-4 sm:mb-6 w-3/4"></div>
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
                     {[1, 2, 3, 4].map((j) => (
                       <div key={j} className="space-y-3">
                         <div className="w-full aspect-square bg-steel-200 rounded-lg"></div>
-                        <div className="h-4 bg-steel-200 rounded w-3/4"></div>
+                        <div className="h-3 sm:h-4 bg-steel-200 rounded w-3/4"></div>
                       </div>
                     ))}
                   </div>
@@ -457,889 +473,276 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Industry Solutions Section - Dynamic from Database */}
-      <section className="py-16 sm:py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-primary mb-4">
-              Soluciones por Industria
-            </h2>
-            <p className="text-base sm:text-lg text-steel-600 max-w-2xl mx-auto">
-              Productos especializados para cada sector industrial
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {categoriesLoading ? (
-              // Loading skeleton
-              [1, 2, 3, 4, 5, 6].map((i) => (
-                <div
-                  key={i}
-                  className="bg-gradient-to-br from-steel-50 to-white rounded-2xl border-2 border-steel-200 p-6 sm:p-8 animate-pulse"
-                >
-                  <div className="w-16 h-16 bg-steel-200 rounded-xl mb-4"></div>
-                  <div className="h-6 bg-steel-200 rounded mb-3 w-3/4"></div>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-steel-200 rounded"></div>
-                    <div className="h-4 bg-steel-200 rounded w-5/6"></div>
-                  </div>
-                  <div className="h-4 bg-steel-200 rounded w-1/3 mt-4"></div>
-                </div>
-              ))
-            ) : categories.length > 0 ? (
-              categories.map((category) => {
-                const CategoryIcon = getIconForCategory(category.slug);
-                const colorGradient = getColorForCategory(category.slug);
-
-                return (
-                  <div
-                    key={category.id}
-                    onClick={() =>
-                      openNewWizard({
-                        category_id: category.id,
-                      })
-                    }
-                    className="group bg-gradient-to-br from-steel-50 to-white rounded-2xl border-2 border-steel-200 hover:border-accent p-6 sm:p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
-                  >
-                    <div
-                      className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${colorGradient} mb-4 group-hover:scale-110 transition-transform duration-300`}
-                    >
-                      <CategoryIcon className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-primary mb-3 group-hover:text-accent transition-colors">
-                      {category.name}
-                    </h3>
-                    <p className="text-sm text-steel-600 leading-relaxed line-clamp-3">
-                      {category.description ||
-                        "Soluciones industriales especializadas"}
-                    </p>
-                    <button className="inline-flex items-center gap-2 text-accent font-semibold text-sm mt-4 group-hover:gap-3 transition-all">
-                      Cotizar ahora <ArrowRight size={16} />
-                    </button>
-                  </div>
-                );
-              })
-            ) : (
-              // Fallback if no categories
-              <div className="col-span-full text-center py-12 bg-white rounded-2xl border-2 border-steel-200">
-                <Package className="w-16 h-16 mx-auto text-steel-400 mb-4" />
-                <p className="text-steel-600 mb-4">
-                  No hay categorías disponibles
-                </p>
-                <Link
-                  to="/catalog"
-                  className="inline-flex items-center gap-2 text-accent font-bold hover:text-primary transition-colors"
-                >
-                  Ir al catálogo completo <ArrowRight size={16} />
-                </Link>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-12 text-center">
-            <Link
-              to="/catalog"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white font-bold text-lg rounded-xl hover:bg-steel-800 hover:shadow-xl transition-all duration-300 active:scale-95"
-            >
-              Explorar Todo el Catálogo
-              <ArrowRight size={20} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Brands Showcase Section */}
+      {/* Categories Section */}
       <section className="py-16 sm:py-20 bg-gradient-to-b from-white to-steel-50">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-primary mb-4">
-              Trabajamos con las Mejores Marcas
+              Categorías de Productos
             </h2>
             <p className="text-base sm:text-lg text-steel-600 max-w-3xl mx-auto">
-              Contamos con más de 500 marcas reconocidas con capacidad real de
-              suministro. Cotiza directamente sin necesidad de buscar números de
-              parte específicos.
+              Explora nuestra amplia gama de categorías industriales con
+              productos especializados
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 mb-12">
-            {brandsLoading ? (
-              // Loading skeleton for brands
-              [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((i) => (
+          {/* Categories Grid */}
+          {categoriesLoading ? (
+            // Loading skeleton
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-xl border-2 border-steel-200 p-6 animate-pulse flex flex-col items-center justify-center gap-3"
+                  className="bg-white rounded-2xl border-2 border-steel-200 animate-pulse overflow-hidden"
                 >
-                  <div className="w-16 h-16 rounded-full bg-steel-200"></div>
-                  <div className="h-5 bg-steel-200 rounded w-20"></div>
-                </div>
-              ))
-            ) : brands.length > 0 ? (
-              brands.map((brand) => (
-                <div
-                  key={brand.id}
-                  onClick={() =>
-                    openNewWizard({ brand: brand.name, brand_id: brand.id })
-                  }
-                  className="group bg-white rounded-xl border-2 border-steel-200 hover:border-accent p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer flex flex-col items-center justify-center gap-3"
-                >
-                  <div className="w-16 h-16 rounded-full bg-steel-100 group-hover:bg-accent/10 flex items-center justify-center transition-all">
-                    <Tag className="w-8 h-8 text-steel-400 group-hover:text-accent transition-colors" />
+                  <div className="aspect-video bg-steel-200"></div>
+                  <div className="p-6">
+                    <div className="h-6 bg-steel-200 rounded mb-3 w-3/4"></div>
+                    <div className="h-4 bg-steel-200 rounded mb-2 w-full"></div>
+                    <div className="h-4 bg-steel-200 rounded mb-4 w-2/3"></div>
+                    <div className="h-8 bg-steel-200 rounded w-20"></div>
                   </div>
-                  <h3 className="text-base sm:text-lg font-bold text-primary group-hover:text-accent transition-colors text-center">
-                    {brand.name}
-                  </h3>
-                  <button className="text-xs sm:text-sm text-accent font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                    Cotizar ahora →
-                  </button>
                 </div>
-              ))
-            ) : (
-              // Fallback if no brands available
-              <div className="col-span-full text-center py-8 text-steel-500">
-                <Tag className="w-12 h-12 mx-auto mb-3 text-steel-400" />
-                <p>No hay marcas disponibles</p>
-              </div>
-            )}
-          </div>
-
-          <div className="bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 border-2 border-accent/20 rounded-2xl p-8 text-center">
-            <h3 className="text-2xl sm:text-3xl font-bold text-primary mb-4">
-              ¿No encuentras la marca que buscas?
-            </h3>
-            <p className="text-steel-600 mb-6 max-w-2xl mx-auto">
-              Contamos con más de 500 marcas disponibles. Solicita una
-              cotización y nuestro equipo te ayudará.
-            </p>
-            <button
-              onClick={() => openNewWizard()}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-accent text-white font-bold text-lg rounded-xl hover:bg-orange-600 hover:shadow-xl transition-all duration-300 active:scale-95"
-            >
-              <FileText size={20} />
-              Solicitar Cotización
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Why Choose Us Section - Two Column Layout */}
-      <section className="py-16 sm:py-24 bg-gradient-to-b from-white to-steel-50">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-            {/* Left Column - Informative Content */}
-            <div className="space-y-6 sm:space-y-8">
-              <div>
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-primary mb-4 sm:mb-6">
-                  ¿Por Qué Nuestro Catálogo?
-                </h2>
-                <p className="text-base sm:text-lg text-steel-600 leading-relaxed">
-                  Más de 20 años conectando empresas con los mejores proveedores
-                  industriales del mercado
-                </p>
-              </div>
-
-              <div className="space-y-4 sm:space-y-6">
-                {[
-                  {
-                    icon: Shield,
-                    title: "Calidad Garantizada",
-                    stat: "100%",
-                    description:
-                      "Todos nuestros productos cuentan con certificación y garantía del fabricante",
-                  },
-                  {
-                    icon: Truck,
-                    title: "Entrega Rápida",
-                    stat: "24-48h",
-                    description:
-                      "Envíos express a todo el país con seguimiento en tiempo real",
-                  },
-                  {
-                    icon: Users,
-                    title: "Asesoría Técnica",
-                    stat: "24/7",
-                    description:
-                      "Equipo de expertos disponible para asesorarte en tu selección de productos",
-                  },
-                  {
-                    icon: CheckCircle2,
-                    title: "Cotizaciones Competitivas",
-                    stat: "Múltiples proveedores",
-                    description:
-                      "Compara cotizaciones de diferentes proveedores industriales",
-                  },
-                ].map((feature, index) => (
-                  <div
-                    key={index}
-                    className="flex gap-4 p-4 rounded-xl bg-white border-2 border-steel-200 hover:border-accent transition-all duration-300 hover:shadow-lg group"
+              ))}
+            </div>
+          ) : categories.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {categories.map((category) => {
+                const CategoryIcon = getIconForCategory(category.slug);
+                return (
+                  <Link
+                    key={category.id}
+                    to={`/catalog?category=${category.slug}`}
+                    className="group block"
                   >
-                    <div className="flex-shrink-0">
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-accent to-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md">
-                        <feature.icon className="w-7 h-7 text-white" />
+                    <div className="bg-white border-2 border-steel-200 rounded-2xl overflow-hidden hover:border-accent hover:shadow-xl transition-all duration-300 hover:-translate-y-2 p-4">
+                      {/* Horizontal Layout: Image Left, Content Right */}
+                      <div className="flex gap-4 items-start">
+                        {/* Category Image/Icon - Left */}
+                        <div className="w-16 h-16 bg-gradient-to-br from-steel-50 to-steel-100 relative overflow-hidden rounded-lg flex-shrink-0">
+                          {category.main_image ? (
+                            <img
+                              src={getImageUrl(category.main_image)}
+                              alt={category.name}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                            />
+                          ) : (
+                            <div
+                              className={`w-full h-full bg-gradient-to-br ${getColorForCategory(category.slug)} flex items-center justify-center`}
+                            >
+                              <CategoryIcon className="w-8 h-8 text-white/90" />
+                            </div>
+                          )}
+                          {/* Overlay */}
+                          <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300"></div>
+                        </div>
+
+                        {/* Category Content - Right */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-black text-steel-800 mb-2 group-hover:text-accent transition-colors line-clamp-2">
+                            {category.name}
+                          </h3>
+
+                          {category.description && (
+                            <p className="text-xs text-steel-600 mb-3 line-clamp-2">
+                              {category.description}
+                            </p>
+                          )}
+
+                          {/* Ver más button */}
+                          <div className="flex items-center gap-1 text-accent font-bold text-xs group-hover:gap-2 transition-all duration-300">
+                            <span>Ver más</span>
+                            <ArrowRight
+                              size={12}
+                              className="group-hover:translate-x-1 transition-transform"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-bold text-primary group-hover:text-accent transition-colors">
-                          {feature.title}
-                        </h3>
-                        <span className="text-xs font-black text-accent bg-accent/10 px-2 py-1 rounded">
-                          {feature.stat}
-                        </span>
-                      </div>
-                      <p className="text-sm text-steel-600 leading-relaxed">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-4">
-                <Link
-                  to="/catalog"
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white font-bold text-base rounded-xl hover:bg-steel-800 hover:shadow-xl transition-all duration-300 active:scale-95"
-                >
-                  Explorar Catálogo
-                  <ArrowRight size={20} />
-                </Link>
-              </div>
+                  </Link>
+                );
+              })}
             </div>
-
-            {/* Right Column - Video/Image Showcase */}
-            <div className="relative lg:order-last order-first">
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-steel-200">
-                {/* Video with Image Fallback */}
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover rounded-xl"
-                  poster="https://disruptinglabs.com/data/api/data/industrial_catalogue/images/pexels-vladimirsrajber-18631420.jpg"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                >
-                  <source
-                    src="https://disruptinglabs.com/data/api/data/industrial_catalogue/videos/4751312-sd_960_540_25fps.mp4"
-                    type="video/mp4"
-                  />
-                </video>
-
-                {/* Decorative Elements */}
-                <div className="absolute -top-4 -right-4 w-24 h-24 bg-accent rounded-full blur-2xl opacity-50"></div>
-                <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-primary rounded-full blur-2xl opacity-40"></div>
-              </div>
-
-              {/* Floating Stats Cards */}
-              <div className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-lg border-2 border-steel-200 p-4 z-10">
-                <p className="text-3xl font-black text-primary mb-1">20+</p>
-                <p className="text-xs text-steel-600 font-semibold">
-                  Años de Experiencia
-                </p>
-              </div>
-
-              <div className="absolute -top-6 -right-6 bg-white rounded-xl shadow-lg border-2 border-steel-200 p-4 z-10">
-                <p className="text-3xl font-black text-accent mb-1">50K+</p>
-                <p className="text-xs text-steel-600 font-semibold">
-                  Clientes Satisfechos
-                </p>
-              </div>
+          ) : (
+            <div className="text-center py-12">
+              <Package className="w-16 h-16 mx-auto text-steel-400 mb-4" />
+              <p className="text-steel-600">No hay categorías disponibles</p>
             </div>
-          </div>
-        </div>
-      </section>
+          )}
 
-      {/* Features Section */}
-      <section id="features" className="py-16 sm:py-24 lg:py-32 bg-white">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-primary mb-4 sm:mb-6 leading-tight">
-              Plataforma Completa
-            </h2>
-            <p className="text-base sm:text-lg lg:text-xl text-steel-600 max-w-3xl mx-auto leading-relaxed">
-              Todo lo que necesitas para explorar y solicitar cotizaciones de
-              productos industriales
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {[
-              {
-                icon: Zap,
-                title: "Catálogo Extenso",
-                description:
-                  "Miles de productos industriales organizados por categoría y fabricante",
-              },
-              {
-                icon: Lightbulb,
-                title: "Búsqueda Avanzada",
-                description:
-                  "Filtros inteligentes por marca, modelo, especificaciones y precio",
-              },
-              {
-                icon: CheckCircle2,
-                title: "Cotización Rápida",
-                description:
-                  "Sistema automatizado para solicitar cotizaciones de múltiples productos",
-              },
-              {
-                icon: Shield,
-                title: "Productos Certificados",
-                description:
-                  "Equipos verificados de marcas reconocidas con garantía incluida",
-              },
-              {
-                icon: Users,
-                title: "Asesoría Técnica",
-                description:
-                  "Expertos disponibles para ayudarte a elegir el producto correcto",
-              },
-              {
-                icon: Truck,
-                title: "Logística Nacional",
-                description:
-                  "Envíos a todo el país con opciones express y seguimiento en línea",
-              },
-              {
-                icon: Package,
-                title: "Gestión de Pedidos",
-                description:
-                  "Portal para seguimiento de cotizaciones, pedidos y facturación",
-              },
-              {
-                icon: ArrowRight,
-                title: "Descuentos por Volumen",
-                description:
-                  "Precios especiales para compras mayoristas y clientes frecuentes",
-              },
-            ].map((feature, index) => (
-              <div
-                key={index}
-                className="feature-card group bounce-in"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="p-2 rounded-lg bg-gradient-to-br from-accent/10 to-accent/5 w-fit mb-4 group-hover:from-accent/20 group-hover:to-accent/10 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
-                  <feature.icon
-                    size={32}
-                    className="text-accent group-hover:animate-spin"
-                    style={{ animationDuration: "0.6s" }}
-                  />
-                </div>
-                <h3 className="text-lg font-bold text-primary mb-3">
-                  {feature.title}
-                </h3>
-                <p className="text-sm text-steel-600 leading-relaxed">
-                  {feature.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="py-20 sm:py-28 bg-gradient-to-b from-steel-50 to-white relative overflow-hidden">
-        <div className="absolute top-10 right-10 w-72 h-72 bg-accent/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-10 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl"></div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-black text-primary mb-6">
-              Proceso Simple y Rápido
-            </h2>
-            <p className="text-lg text-steel-600 max-w-2xl mx-auto">
-              Obtén cotizaciones personalizadas en 3 pasos
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                step: 1,
-                title: "Explora el Catálogo",
-                description:
-                  "Navega por categorías, marcas y fabricantes. Usa filtros avanzados para encontrar exactamente lo que necesitas",
-              },
-              {
-                step: 2,
-                title: "Identifica lo que Necesitas",
-                description:
-                  "Consulta especificaciones técnicas, imágenes y descripciones detalladas de cada ítem",
-              },
-              {
-                step: 3,
-                title: "Solicita tu Cotización",
-                description:
-                  "Contacta directamente con nuestro equipo y recibe una cotización personalizada en menos de 24 horas",
-              },
-            ].map((step, index) => (
-              <div
-                key={step.step}
-                className="group relative scale-in"
-                style={{ animationDelay: `${index * 0.15}s` }}
-              >
-                {/* Connection line */}
-                {index < 2 && (
-                  <div
-                    className="hidden md:block absolute top-8 left-1/2 w-full h-1 bg-gradient-to-r from-accent to-transparent -translate-y-1/2 origin-left animate-pulse"
-                    style={{
-                      animationDuration: "2s",
-                      animationDelay: `${0.3 + index * 0.15}s`,
-                    }}
-                  ></div>
-                )}
-
-                <div className="text-center relative z-10">
-                  <div className="bg-gradient-to-br from-accent to-orange-500 text-white rounded-full w-20 h-20 flex items-center justify-center text-4xl font-black mx-auto mb-8 shadow-lg shadow-accent/30 group-hover:shadow-xl group-hover:shadow-accent/50 transition-all duration-300 group-hover:scale-125 group-hover:-rotate-12">
-                    {step.step}
-                  </div>
-                  <h3 className="text-2xl font-bold text-primary mb-4 group-hover:text-accent transition-colors duration-300">
-                    {step.title}
-                  </h3>
-                  <p className="text-steel-600 leading-relaxed group-hover:text-steel-700 transition-colors duration-300">
-                    {step.description}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div
-            className="mt-16 text-center scale-in"
-            style={{ animationDelay: "0.6s" }}
-          >
+          {/* View All Categories Button */}
+          <div className="text-center mt-12">
             <Link
               to="/catalog"
-              className="inline-flex items-center gap-2 px-10 py-4 bg-primary text-white font-bold text-lg hover:bg-steel-800 hover:shadow-xl hover:shadow-primary/50 transition-all duration-300 active:scale-95 relative overflow-hidden group"
+              className="inline-flex items-center gap-2 px-8 py-3 bg-accent text-white font-bold rounded-xl hover:bg-orange-600 transition-all duration-300 hover:shadow-lg active:scale-95"
             >
-              <span className="relative z-10">Comenzar Ahora</span>
-              <ArrowRight
-                size={22}
-                className="group-hover:translate-x-1 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-accent to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
+              Ver Todas las Categorías
+              <ArrowRight size={18} />
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="hero-gradient text-white py-20 sm:py-28 relative overflow-hidden">
-        <div className="absolute inset-0 grid-pattern opacity-10"></div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {[
-              { number: "5K+", label: "Productos" },
-              { number: "100+", label: "Marcas" },
-              { number: "50K+", label: "Clientes" },
-              { number: "24/7", label: "Soporte" },
-            ].map((stat, index) => (
-              <div
-                key={index}
-                className="p-6 rounded-xl border border-white/10 hover:border-accent/50 hover:bg-white/5 transition-all duration-300"
-              >
-                <p className="text-5xl sm:text-6xl font-black bg-gradient-to-r from-accent to-blue-400 bg-clip-text text-transparent mb-3">
-                  {stat.number}
-                </p>
-                <p className="text-steel-200 text-sm font-semibold">
-                  {stat.label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Why Us Section */}
-      <section
-        id="why-us"
-        className="py-24 sm:py-40 bg-gradient-to-b from-steel-50 via-white to-steel-50 relative overflow-hidden"
-      >
-        <div className="absolute -top-40 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl"></div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-20">
-            <h2 className="text-5xl sm:text-6xl font-black text-primary mb-6">
-              ¿Por Qué Industrial?
-            </h2>
-            <p className="text-xl text-steel-600 max-w-2xl mx-auto">
-              Líderes en soluciones industriales con años de confianza y
-              experiencia
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div className="bg-white rounded-2xl p-10 border border-steel-200 hover:border-accent hover:shadow-xl transition-all duration-300">
-              <h3 className="text-3xl font-bold text-primary mb-8">
-                Experiencia Comprobada
-              </h3>
-              <ul className="space-y-5">
-                {[
-                  "20+ años sirviendo a la industria",
-                  "Relaciones con fabricantes de renombre",
-                  "Garantía de calidad en todos los productos",
-                  "Precios competitivos sin sacrificar calidad",
-                ].map((item, index) => (
-                  <li key={index} className="flex items-start gap-4">
-                    <div className="bg-accent/10 rounded-lg p-2 flex-shrink-0">
-                      <CheckCircle2 size={24} className="text-accent" />
-                    </div>
-                    <span className="text-steel-700 text-lg leading-relaxed">
-                      {item}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="bg-white rounded-2xl p-10 border border-steel-200 hover:border-accent hover:shadow-xl transition-all duration-300">
-              <h3 className="text-3xl font-bold text-primary mb-8">
-                Servicio Personalizado
-              </h3>
-              <ul className="space-y-5">
-                {[
-                  "Asesoramiento especializado disponible",
-                  "Soluciones adaptadas a tus necesidades",
-                  "Respuesta rápida a tus consultas",
-                  "Programa de fidelización con beneficios",
-                ].map((item, index) => (
-                  <li key={index} className="flex items-start gap-4">
-                    <div className="bg-accent/10 rounded-lg p-2 flex-shrink-0">
-                      <CheckCircle2 size={24} className="text-accent" />
-                    </div>
-                    <span className="text-steel-700 text-lg leading-relaxed">
-                      {item}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Stats */}
-      <section className="py-12 sm:py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-3 gap-4 sm:gap-8 text-center">
-            {[
-              { number: "5K+", label: "Productos" },
-              { number: "100+", label: "Marcas" },
-              { number: "24/7", label: "Soporte" },
-            ].map((stat, i) => (
-              <div
-                key={i}
-                className="p-4 sm:p-6 rounded-xl bg-gradient-to-br from-steel-50 to-white border border-steel-200 hover:border-accent transition-all duration-300 hover:shadow-lg"
-              >
-                <p className="text-3xl sm:text-4xl lg:text-5xl font-black text-accent mb-2">
-                  {stat.number}
-                </p>
-                <p className="text-xs sm:text-sm text-steel-600 font-semibold">
-                  {stat.label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits Section */}
-      <section className="py-16 sm:py-24 lg:py-40 bg-white relative overflow-hidden">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-accent/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 right-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl"></div>
-
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
-            <div className="space-y-6 sm:space-y-8">
-              <div>
-                <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-primary mb-4 sm:mb-6">
-                  ¿Por qué Usar Nuestro Catálogo?
-                </h2>
-                <p className="text-base sm:text-lg lg:text-xl text-steel-600 leading-relaxed">
-                  Más que un simple catálogo. Te conectamos con los mejores
-                  proveedores industriales con servicio personalizado.
-                </p>
-              </div>
-
-              <div className="space-y-4 sm:space-y-6">
-                {[
-                  {
-                    title: "Asesoramiento Especializado",
-                    desc: "Nuestro equipo de expertos está disponible para ayudarte a elegir los productos correctos",
-                  },
-                  {
-                    title: "Cotizaciones Personalizadas",
-                    desc: "Obtén precios especiales según tus volúmenes y necesidades específicas",
-                  },
-                  {
-                    title: "Garantía de Calidad",
-                    desc: "Todos nuestros productos están certificados y garantizados por los fabricantes",
-                  },
-                  {
-                    title: "Entrega Rápida",
-                    desc: "Opciones de entrega flexible con seguimiento en tiempo real de tus pedidos",
-                  },
-                ].map((benefit, i) => (
-                  <div key={i} className="flex gap-3 sm:gap-4">
-                    <div className="flex-shrink-0">
-                      <div className="bg-gradient-to-br from-accent to-orange-600 text-white rounded-lg w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center font-bold text-sm sm:text-base">
-                        ✓
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-primary text-base sm:text-lg mb-1">
-                        {benefit.title}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-steel-600 leading-relaxed">
-                        {benefit.desc}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative mt-8 lg:mt-0">
-              <div className="absolute -inset-4 bg-gradient-to-br from-accent/20 to-primary/20 rounded-3xl blur-2xl opacity-60"></div>
-              <div className="relative bg-white rounded-3xl p-6 sm:p-10 border-2 border-steel-200 shadow-2xl">
-                <div className="space-y-4 sm:space-y-6">
-                  <div className="bg-gradient-to-br from-accent/10 to-primary/10 rounded-2xl p-4 sm:p-6 border border-steel-200">
-                    <p className="text-xs sm:text-sm text-steel-600 font-semibold mb-2 uppercase">
-                      Certificaciones
-                    </p>
-                    <p className="text-xl sm:text-2xl font-black text-primary">
-                      ISO 9001:2015
-                    </p>
-                    <p className="text-steel-600 text-xs sm:text-sm mt-2">
-                      Certificados en gestión de calidad
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                    <div className="bg-gradient-to-br from-primary/5 to-steel-100 rounded-xl p-3 sm:p-4 border border-steel-200">
-                      <p className="text-2xl sm:text-3xl font-black text-primary mb-1">
-                        20+
-                      </p>
-                      <p className="text-xs text-steel-600 font-medium">Años</p>
-                    </div>
-                    <div className="bg-gradient-to-br from-accent/5 to-orange-100 rounded-xl p-3 sm:p-4 border border-steel-200">
-                      <p className="text-2xl sm:text-3xl font-black text-accent mb-1">
-                        50K+
-                      </p>
-                      <p className="text-xs text-steel-600 font-medium">
-                        Clientes
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-steel-200 pt-4 sm:pt-6">
-                    <p className="text-center text-steel-700 font-medium text-xs sm:text-sm">
-                      Confían en nosotros empresas líderes
-                    </p>
-                    <div className="mt-3 sm:mt-4 grid grid-cols-3 gap-2 text-center text-steel-400 text-xs font-semibold">
-                      <div>Construcción</div>
-                      <div>Manufactura</div>
-                      <div>Servicios</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-accent to-orange-600 text-white py-24 sm:py-32 relative overflow-hidden">
+      <section className="bg-gradient-to-r from-accent to-orange-600 text-white py-16 sm:py-24 md:py-32 relative overflow-hidden">
         <div className="absolute inset-0 grid-pattern opacity-10"></div>
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <h2 className="text-5xl sm:text-6xl font-black mb-8 leading-tight">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-6 sm:mb-8 leading-tight">
             ¿Listo para Encontrar lo que Necesitas?
           </h2>
-          <p className="text-xl text-orange-100 mb-12 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-orange-100 mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed">
             Explora nuestro catálogo completo y solicita cotizaciones
             personalizadas para tu empresa. Sin compromiso.
           </p>
           <Link
             to="/catalog"
-            className="inline-flex items-center gap-3 px-10 py-4 bg-white text-accent font-bold hover:bg-steel-100 transition-all duration-300 text-lg rounded-lg hover:shadow-2xl hover:shadow-white/20 active:scale-95"
+            className="inline-flex items-center gap-2 sm:gap-3 px-6 sm:px-10 py-3 sm:py-4 bg-white text-accent font-bold hover:bg-steel-100 transition-all duration-300 text-base sm:text-lg rounded-lg hover:shadow-2xl hover:shadow-white/20 active:scale-95"
           >
             Explorar Catálogo Ahora
-            <ArrowRight size={22} />
+            <ArrowRight size={20} className="sm:w-6 sm:h-6" />
           </Link>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gradient-to-b from-primary to-steel-950 text-white border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-            <div>
-              <h3 className="font-bold text-lg mb-6">Sobre Industrial</h3>
-              <ul className="space-y-3 text-steel-300 text-sm">
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-accent transition-colors duration-200"
-                  >
-                    Acerca de nosotros
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-accent transition-colors duration-200"
-                  >
-                    Nuestro equipo
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-accent transition-colors duration-200"
-                  >
-                    Carreras
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-6">Productos</h3>
-              <ul className="space-y-3 text-steel-300 text-sm">
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-accent transition-colors duration-200"
-                  >
-                    Herramientas
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-accent transition-colors duration-200"
-                  >
-                    Equipamiento
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-accent transition-colors duration-200"
-                  >
-                    Componentes
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-6">Soporte</h3>
-              <ul className="space-y-3 text-steel-300 text-sm">
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-accent transition-colors duration-200"
-                  >
-                    Centro de ayuda
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-accent transition-colors duration-200"
-                  >
-                    Contacto
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-accent transition-colors duration-200"
-                  >
-                    Garantía
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-6">Legales</h3>
-              <ul className="space-y-3 text-steel-300 text-sm">
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-accent transition-colors duration-200"
-                  >
-                    Privacidad
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-accent transition-colors duration-200"
-                  >
-                    Términos
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-accent transition-colors duration-200"
-                  >
-                    Cookies
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/admin/login"
-                    className="hover:text-accent transition-colors duration-200 opacity-50 hover:opacity-100"
-                  >
-                    Admin
-                  </a>
-                </li>
-              </ul>
-            </div>
+      {/* Navigation Section */}
+      <section className="py-16 sm:py-20 bg-gradient-to-b from-primary to-steel-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4">
+              Conoce Más Sobre Trenor
+            </h2>
+            <p className="text-base sm:text-lg text-steel-200 max-w-3xl mx-auto">
+              Descubre nuestra empresa, servicios y cómo podemos ayudarte
+            </p>
           </div>
-          <div className="border-t border-steel-700 pt-8 flex flex-col sm:flex-row items-center justify-between text-sm text-steel-400">
-            <p>&copy; 2024 Industrial. Todos los derechos reservados.</p>
-            <div className="flex gap-6 mt-6 sm:mt-0">
-              <a
-                href="#"
-                className="hover:text-accent transition-colors duration-200"
-              >
-                Facebook
-              </a>
-              <a
-                href="#"
-                className="hover:text-accent transition-colors duration-200"
-              >
-                LinkedIn
-              </a>
-              <a
-                href="#"
-                className="hover:text-accent transition-colors duration-200"
-              >
-                Twitter
-              </a>
-            </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* About Us */}
+            <Link
+              to="/about"
+              className="group bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:bg-white/20 hover:border-accent/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-accent/30 transition-colors">
+                  <Users className="w-8 h-8 text-accent" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-accent transition-colors">
+                  Nosotros
+                </h3>
+                <p className="text-steel-200 text-sm leading-relaxed">
+                  Conoce nuestra historia, misión y enfoque en soluciones
+                  industriales
+                </p>
+                <div className="flex items-center gap-1 text-white font-semibold text-sm mt-4 group-hover:gap-2 transition-all">
+                  <span>Conocer más</span>
+                  <ArrowRight
+                    size={14}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </div>
+              </div>
+            </Link>
+
+            {/* FAQ */}
+            <Link
+              to="/faq"
+              className="group bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:bg-white/20 hover:border-accent/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-accent/30 transition-colors">
+                  <Lightbulb className="w-8 h-8 text-accent" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-accent transition-colors">
+                  FAQ
+                </h3>
+                <p className="text-steel-200 text-sm leading-relaxed">
+                  Encuentra respuestas a las preguntas más frecuentes sobre
+                  nuestros servicios
+                </p>
+                <div className="flex items-center gap-1 text-white font-semibold text-sm mt-4 group-hover:gap-2 transition-all">
+                  <span>Ver preguntas</span>
+                  <ArrowRight
+                    size={14}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </div>
+              </div>
+            </Link>
+
+            {/* Contact */}
+            <Link
+              to="/contact"
+              className="group bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:bg-white/20 hover:border-accent/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-accent/30 transition-colors">
+                  <Shield className="w-8 h-8 text-accent" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-accent transition-colors">
+                  Contacto
+                </h3>
+                <p className="text-steel-200 text-sm leading-relaxed">
+                  Ponte en contacto con nuestro equipo para cotizaciones
+                  personalizadas
+                </p>
+                <div className="flex items-center gap-1 text-white font-semibold text-sm mt-4 group-hover:gap-2 transition-all">
+                  <span>Contactar</span>
+                  <ArrowRight
+                    size={14}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </div>
+              </div>
+            </Link>
+
+            {/* Catalog */}
+            <Link
+              to="/catalog"
+              className="group bg-accent/20 backdrop-blur-sm border border-accent/40 rounded-2xl p-6 hover:bg-accent/30 hover:border-accent/60 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-accent/30 rounded-full flex items-center justify-center mb-4 group-hover:bg-accent/40 transition-colors">
+                  <Package className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Catálogo</h3>
+                <p className="text-steel-200 text-sm leading-relaxed">
+                  Explora nuestro amplio catálogo de productos y soluciones
+                  industriales
+                </p>
+                <div className="flex items-center gap-1 text-white font-semibold text-sm mt-4 group-hover:gap-2 transition-all">
+                  <span>Explorar</span>
+                  <ArrowRight
+                    size={14}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </div>
+              </div>
+            </Link>
           </div>
         </div>
-      </footer>
+      </section>
 
-      {/* Floating Quote Button */}
-      <button
-        onClick={() => openNewWizard()}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-6 py-4 bg-accent text-white font-bold text-base rounded-full hover:bg-orange-600 hover:shadow-2xl hover:shadow-accent/50 transition-all duration-300 active:scale-95 shadow-xl group"
-      >
-        <FileText
-          size={20}
-          className="group-hover:rotate-12 transition-transform"
-        />
-        <span className="hidden sm:inline">Cotizar ahora</span>
-      </button>
+      <Footer />
+
+      {/* Floating Quote Button - Only show after quotation form */}
+      {showFloatingButton && (
+        <button
+          onClick={() => {
+            console.log("Floating button clicked, opening wizard...");
+            openNewWizard();
+          }}
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 bg-accent text-white font-bold text-sm sm:text-base rounded-full hover:bg-orange-600 hover:shadow-2xl hover:shadow-accent/50 transition-all duration-300 active:scale-95 shadow-xl group"
+        >
+          <FileText
+            size={16}
+            className="sm:w-5 sm:h-5 group-hover:rotate-12 transition-transform"
+          />
+          <span className="hidden sm:inline">Cotizar ahora</span>
+        </button>
+      )}
 
       {/* New Quote Wizard */}
       {isNewWizardOpen && (

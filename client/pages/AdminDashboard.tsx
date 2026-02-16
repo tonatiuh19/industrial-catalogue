@@ -14,6 +14,8 @@ import {
   Menu,
   X,
   ShieldCheck,
+  MessageSquare,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,15 +39,21 @@ const navigation = [
     roles: ["admin", "super_admin"],
   },
   {
+    name: "Tickets de Soporte",
+    href: "/admin/support-tickets",
+    icon: MessageSquare,
+    roles: ["admin", "super_admin"],
+  },
+  {
+    name: "Gestión FAQ",
+    href: "/admin/faq-management",
+    icon: HelpCircle,
+    roles: ["admin", "super_admin"],
+  },
+  {
     name: "Usuarios",
     href: "/admin/users",
     icon: Users,
-    roles: ["super_admin"],
-  },
-  {
-    name: "Páginas de Contenido",
-    href: "/admin/content",
-    icon: FileText,
     roles: ["super_admin"],
   },
   {

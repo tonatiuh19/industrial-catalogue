@@ -43,4 +43,3 @@ service-account-key.json
 # Database
 *.sqlite
 *.db
-database

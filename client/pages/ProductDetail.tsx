@@ -26,7 +26,12 @@ const getImageUrl = (imagePath: string | null | undefined): string => {
   if (!imagePath)
     return "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800";
   if (imagePath.startsWith("http")) return imagePath;
-  return `${IMAGE_BASE_URL}${imagePath}`;
+
+  // Remove leading slash from path to avoid double slashes
+  const cleanPath = imagePath.startsWith("/")
+    ? imagePath.substring(1)
+    : imagePath;
+  return `${IMAGE_BASE_URL}/${cleanPath}`;
 };
 
 const ProductDetail = () => {

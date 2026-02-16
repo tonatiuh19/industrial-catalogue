@@ -1,0 +1,118 @@
+================================================================
+TRENOR INDUSTRIAL - LISTA DE INFORMACIÓN REQUERIDA DEL CLIENTE
+================================================================
+
+⚠️  CRÍTICO: La siguiente información es requerida del cliente
+    para completar la configuración del sitio web del catálogo industrial.
+
+================================================================
+🏢 INFORMACIÓN DE LA EMPRESA
+================================================================
+
+[ ] Razón Social de la Empresa
+    Actual: "Trenor Industrial" (verificar si es correcto)
+
+[ ] Descripción/Misión de la Empresa
+    Actual: "Soluciones industriales de calidad superior..."
+    → Necesita descripción oficial de la empresa
+
+================================================================
+📍 INFORMACIÓN DE CONTACTO
+================================================================
+
+[ ] Domicilio Fiscal
+    Actual: "Ciudad Industrial, México"
+    → Necesita dirección completa:
+        - Calle y número
+        - Colonia
+        - Delegación/Municipio
+        - Estado
+        - Código postal
+        - País (México)
+
+[ ] Números Telefónicos
+    Actual: "+52 (55) 1234-5678" (temporal)
+    → Necesita números telefónicos reales:
+        - Línea principal de oficina
+        - Departamento de ventas
+        - Soporte técnico
+        - Móvil/WhatsApp (si aplica)
+        - Lada (código de área) completa
+
+[ ] Direcciones de Correo Electrónico
+    Actual: "contacto@trenor.com"
+    → Verificar y proporcionar:
+        - Correo de contacto general
+        - Correo de ventas
+        - Correo de soporte
+        - Correo de información/consultas
+
+[ ] Horarios de Atención
+    → Necesita horarios de operación:
+        - Horarios de Lunes a Viernes
+        - Disponibilidad en fines de semana
+        - Zona horaria (Tiempo del Centro, etc.)
+
+================================================================
+🌐 CUENTAS DE REDES SOCIALES
+================================================================
+
+[ ] Facebook
+    Actual: Enlace temporal "#facebook"
+    → Necesita URL real de la página de Facebook
+
+[ ] LinkedIn
+    Actual: Enlace temporal "#linkedin" 
+    → Necesita URL real de la página de empresa en LinkedIn
+
+[ ] Twitter/X
+    Actual: Enlace temporal "#twitter"
+    → Necesita URL real de la cuenta de Twitter/X
+
+[ ] Instagram (si aplica)
+    → Necesita URL de cuenta comercial de Instagram
+
+[ ] YouTube (si aplica)
+    → Necesita URL del canal de YouTube
+
+[ ] TikTok (si aplica)
+    → Necesita URL de cuenta comercial de TikTok
+
+================================================================
+📄 DOCUMENTOS LEGALES (CONFORME A LA LEY MEXICANA)
+================================================================
+
+[ ] Aviso de Privacidad
+    Actual: Enlace temporal "#privacy"
+    → Necesita documento completo de aviso de privacidad
+    → Debe cumplir con la Ley Federal de Protección de Datos Personales (LFPDPPP)
+
+[ ] Términos y Condiciones de Uso
+    Actual: Enlace temporal "#terms"
+    → Necesita documento completo de términos y condiciones
+    → Debe incluir jurisdicción mexicana
+
+
+================================================================
+📋 ACTUALIZACIONES DE CONTENIDO NECESARIAS
+================================================================
+
+[ ] Contenido de la Página "Acerca de Nosotros"
+    → Necesita historia completa e información de la empresa
+
+[ ] Contenido de Preguntas Frecuentes (FAQ)
+    Actual: Tiene FAQs de ejemplo en español
+    → Revisar y actualizar contenido de FAQ según sea necesario
+
+================================================================
+CONSIDERACIONES ADICIONALES PARA MÉXICO
+================================================================
+
+- Usar formato de fecha DD/MM/AAAA
+- Usar formato de moneda $MXN o pesos mexicanos
+- Considerar días festivos mexicanos para comunicaciones
+- Usar código de país +52 para todos los números telefónicos
+- Considerar diferencias regionales dentro de México
+- Incluir opción de idioma (español mexicano vs. otros países)
+
+================================================================

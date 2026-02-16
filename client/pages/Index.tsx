@@ -3,6 +3,7 @@ import { ChevronDown } from "lucide-react";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import ProductFilters from "@/components/ProductFilters";
+import Footer from "@/components/Footer";
 
 // Mock product data
 const mockProducts = [
@@ -151,11 +152,14 @@ export default function Index() {
     let filtered = mockProducts;
 
     if (filters.categories.length > 0) {
-      filtered = filtered.filter((p) => filters.categories.includes(p.category));
+      filtered = filtered.filter((p) =>
+        filters.categories.includes(p.category),
+      );
     }
 
     filtered = filtered.filter(
-      (p) => p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1]
+      (p) =>
+        p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1],
     );
 
     if (filters.availability === "En Stock") {
@@ -203,7 +207,11 @@ export default function Index() {
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div className="text-sm text-steel-600">
-            Mostrando <span className="font-bold text-primary">{filteredAndSortedProducts.length}</span> productos
+            Mostrando{" "}
+            <span className="font-bold text-primary">
+              {filteredAndSortedProducts.length}
+            </span>{" "}
+            productos
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
@@ -239,10 +247,7 @@ export default function Index() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Filters - desktop sidebar */}
           <aside className="hidden md:block">
-            <ProductFilters
-              onFilterChange={setFilters}
-              isOpen={true}
-            />
+            <ProductFilters onFilterChange={setFilters} isOpen={true} />
           </aside>
 
           {/* Main content area */}
@@ -289,107 +294,7 @@ export default function Index() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-primary text-white mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h3 className="font-bold mb-4">Sobre Industrial</h3>
-              <ul className="space-y-2 text-steel-200 text-sm">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Acerca de nosotros
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Nuestro equipo
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Carreras
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold mb-4">Productos</h3>
-              <ul className="space-y-2 text-steel-200 text-sm">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Herramientas
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Equipamiento
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Componentes
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold mb-4">Soporte</h3>
-              <ul className="space-y-2 text-steel-200 text-sm">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Centro de ayuda
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Contacto
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Garantía
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold mb-4">Legales</h3>
-              <ul className="space-y-2 text-steel-200 text-sm">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Privacidad
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Términos
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Cookies
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-steel-700 pt-8 flex flex-col sm:flex-row items-center justify-between text-sm text-steel-200">
-            <p>&copy; 2024 Industrial. Todos los derechos reservados.</p>
-            <div className="flex gap-6 mt-4 sm:mt-0">
-              <a href="#" className="hover:text-white transition-colors">
-                Facebook
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
-                LinkedIn
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
-                Twitter
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

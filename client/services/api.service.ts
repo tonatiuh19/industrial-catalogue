@@ -111,7 +111,20 @@ export const subcategoriesApi = {
     category_id: number;
     description?: string;
   }) => {
-    return httpClient.post("/admin/subcategories", data);
+    console.log(
+      "[subcategoriesApi] create called with data:",
+      JSON.stringify(data, null, 2),
+    );
+    return httpClient
+      .post("/admin/subcategories", data)
+      .then((response) => {
+        console.log("[subcategoriesApi] create response:", response);
+        return response;
+      })
+      .catch((error) => {
+        console.error("[subcategoriesApi] create error:", error);
+        throw error;
+      });
   },
   update: (
     id: number,
@@ -123,7 +136,23 @@ export const subcategoriesApi = {
       is_active?: boolean;
     },
   ) => {
-    return httpClient.put<ApiResponse>(`/admin/subcategories/${id}`, data);
+    console.log(
+      `[subcategoriesApi] update called with id: ${id}, data:`,
+      JSON.stringify(data, null, 2),
+    );
+    return httpClient
+      .put<ApiResponse>(`/admin/subcategories/${id}`, data)
+      .then((response) => {
+        console.log(
+          `[subcategoriesApi] update response for id ${id}:`,
+          response,
+        );
+        return response;
+      })
+      .catch((error) => {
+        console.error(`[subcategoriesApi] update error for id ${id}:`, error);
+        throw error;
+      });
   },
   delete: (id: number) => {
     return httpClient.delete<ApiResponse>(`/admin/subcategories/${id}`);

@@ -438,6 +438,1029 @@ const getProductById: RequestHandler = async (req, res) => {
   }
 };
 
+// ==================== EMAIL SERVICE ====================
+interface NotificationSettings {
+  enable_client_notifications?: string;
+  enable_admin_notifications?: string;
+}
+
+interface SMTPSettings {
+  smtp_host?: string;
+  smtp_port?: string;
+  smtp_secure?: string;
+  smtp_username?: string;
+  smtp_password?: string;
+  from_email?: string;
+  from_name?: string;
+  company_name?: string;
+  company_website?: string;
+  company_logo?: string;
+}
+
+interface EmailTemplate {
+  id: number;
+  template_key: string;
+  name: string;
+  subject: string;
+  html_content: string;
+  text_content?: string;
+  variables?: string[];
+  is_active: boolean;
+}
+
+// Get notification settings from database
+const getNotificationSettings = async (): Promise<NotificationSettings> => {
+  try {
+    const settings = await query<
+      Array<{ setting_key: string; setting_value: string }>
+    >("SELECT setting_key, setting_value FROM notification_settings");
+
+    const settingsObj: NotificationSettings = {};
+    settings.forEach((setting) => {
+      settingsObj[setting.setting_key as keyof NotificationSettings] =
+        setting.setting_value;
+    });
+
+    return settingsObj;
+  } catch (error) {
+    console.error("Error getting notification settings:", error);
+    return {};
+  }
+};
+
+// Get SMTP settings from environment variables
+const getSMTPSettings = (): SMTPSettings => {
+  return {
+    smtp_host: process.env.SMTP_HOST,
+    smtp_port: process.env.SMTP_PORT || "587",
+    smtp_secure: process.env.SMTP_SECURE || "tls",
+    smtp_username: process.env.SMTP_USER, // Using SMTP_USER from .env
+    smtp_password: process.env.SMTP_PASSWORD,
+    from_email: process.env.SMTP_FROM || process.env.SMTP_USER,
+    from_name: "Industrial", // Extracted from SMTP_FROM
+    company_name: process.env.COMPANY_NAME || "Industrial",
+    company_website: process.env.COMPANY_WEBSITE || "https://industrial.com",
+    company_logo: process.env.COMPANY_LOGO || "https://industrial.com/logo.png",
+  };
+};
+
+// Get email template by key
+const getEmailTemplate = async (
+  templateKey: string,
+): Promise<EmailTemplate | null> => {
+  try {
+    const templates = await query<EmailTemplate[]>(
+      "SELECT * FROM email_templates WHERE template_key = ? AND is_active = 1",
+      [templateKey],
+    );
+
+    if (templates.length === 0) return null;
+
+    const template = templates[0];
+    if (template.variables && typeof template.variables === "string") {
+      try {
+        template.variables = JSON.parse(template.variables);
+      } catch (e) {
+        template.variables = [];
+      }
+    }
+
+    return template;
+  } catch (error) {
+    console.error("Error getting email template:", error);
+    return null;
+  }
+};
+
+// Simple template variable replacement
+const renderTemplate = (
+  template: string,
+  variables: Record<string, any>,
+): string => {
+  let rendered = template;
+
+  // Replace simple variables {{variable}}
+  for (const [key, value] of Object.entries(variables)) {
+    const regex = new RegExp(`\{\{${key}\}\}`, "g");
+    rendered = rendered.replace(regex, value || "");
+  }
+
+  // Handle conditional blocks {{#if variable}}content{{/if}}
+  rendered = rendered.replace(
+    /\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g,
+    (match, varName, content) => {
+      return variables[varName] ? content : "";
+    },
+  );
+
+  return rendered;
+};
+
+// Create email transporter
+const createEmailTransporter = () => {
+  const settings = getSMTPSettings();
+
+  if (
+    !settings.smtp_host ||
+    !settings.smtp_username ||
+    !settings.smtp_password
+  ) {
+    console.warn("Email settings not configured in environment variables");
+    return null;
+  }
+
+  try {
+    return nodemailer.createTransport({
+      host: settings.smtp_host,
+      port: parseInt(settings.smtp_port || "587"),
+      secure: settings.smtp_secure === "true" || settings.smtp_secure === "ssl", // Handle boolean string
+      auth: {
+        user: settings.smtp_username,
+        pass: settings.smtp_password,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
+  } catch (error) {
+    console.error("Error creating email transporter:", error);
+    return null;
+  }
+};
+
+// Send email using template
+const sendTemplateEmail = async (
+  templateKey: string,
+  to: string | string[],
+  variables: Record<string, any>,
+): Promise<boolean> => {
+  try {
+    const smtpSettings = getSMTPSettings();
+    const template = await getEmailTemplate(templateKey);
+    const transporter = createEmailTransporter();
+
+    if (!template || !transporter) {
+      console.error("Template or transporter not available");
+      return false;
+    }
+
+    // Merge SMTP settings with template variables for company info
+    const templateVariables = {
+      ...variables,
+      company_name: smtpSettings.company_name,
+      company_website: smtpSettings.company_website,
+      company_logo: smtpSettings.company_logo,
+    };
+
+    const subject = renderTemplate(template.subject, templateVariables);
+    const html = renderTemplate(template.html_content, templateVariables);
+    const text = template.text_content
+      ? renderTemplate(template.text_content, templateVariables)
+      : undefined;
+
+    const mailOptions = {
+      from: `${smtpSettings.from_name || "Trenor"} <${smtpSettings.from_email}>`,
+      to: Array.isArray(to) ? to.join(", ") : to,
+      subject,
+      html,
+      text,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`Email sent successfully to ${to}`);
+    return true;
+  } catch (error) {
+    console.error("Error sending template email:", error);
+    return false;
+  }
+};
+
+// Get admin notification recipients
+const getAdminNotificationRecipients = async (
+  notificationType: string = "quote_requests",
+): Promise<string[]> => {
+  try {
+    const admins = await query<Array<{ email: string }>>(
+      `SELECT a.email 
+       FROM admins a 
+       INNER JOIN admin_notifications an ON a.id = an.admin_id 
+       WHERE a.is_active = 1 AND an.notification_type = ? AND an.is_enabled = 1`,
+      [notificationType],
+    );
+
+    return admins.map((admin) => admin.email);
+  } catch (error) {
+    console.error("Error getting admin recipients:", error);
+    return [];
+  }
+};
+
+// Send quote notifications
+const sendQuoteNotifications = async (quoteData: any) => {
+  const settings = await getNotificationSettings();
+  const smtpSettings = getSMTPSettings();
+
+  // Prepare template variables
+  const templateVars = {
+    ...quoteData,
+    date: new Date().toLocaleDateString("es-ES"),
+    company_name: smtpSettings.company_name || "Industrial",
+    company_logo: smtpSettings.company_logo || "",
+    company_website: smtpSettings.company_website || "",
+    admin_url: process.env.ADMIN_URL || smtpSettings.company_website,
+  };
+
+  // Send client confirmation email
+  if (
+    settings.enable_client_notifications === "1" &&
+    quoteData.customer_email
+  ) {
+    try {
+      await sendTemplateEmail(
+        "client_quote_confirmation",
+        quoteData.customer_email,
+        templateVars,
+      );
+    } catch (error) {
+      console.error("Error sending client notification:", error);
+    }
+  }
+
+  // Send admin notification emails
+  if (settings.enable_admin_notifications === "1") {
+    try {
+      const adminEmails =
+        await getAdminNotificationRecipients("quote_requests");
+      if (adminEmails.length > 0) {
+        await sendTemplateEmail(
+          "admin_quote_notification",
+          adminEmails,
+          templateVars,
+        );
+      }
+    } catch (error) {
+      console.error("Error sending admin notifications:", error);
+    }
+  }
+};
+
+// Send contact form notifications
+const sendContactNotifications = async (contactData: any) => {
+  const settings = await getNotificationSettings();
+  const smtpSettings = getSMTPSettings();
+
+  // Prepare template variables
+  const templateVars = {
+    ...contactData,
+    date: new Date().toLocaleDateString("es-ES"),
+    company_name: smtpSettings.company_name || "Industrial",
+    company_logo: smtpSettings.company_logo || "",
+    company_website: smtpSettings.company_website || "",
+    admin_url: process.env.ADMIN_URL || smtpSettings.company_website,
+  };
+
+  // Send client confirmation email
+  if (settings.enable_client_notifications === "1" && contactData.email) {
+    try {
+      await sendTemplateEmail(
+        "contact_confirmation",
+        contactData.email,
+        templateVars,
+      );
+    } catch (error) {
+      console.error("Error sending contact confirmation:", error);
+    }
+  }
+
+  // Send admin notification emails
+  if (settings.enable_admin_notifications === "1") {
+    try {
+      const adminEmails = await getAdminNotificationRecipients(
+        "contact_submissions",
+      );
+      if (adminEmails.length > 0) {
+        await sendTemplateEmail(
+          "admin_contact_notification",
+          adminEmails,
+          templateVars,
+        );
+      }
+    } catch (error) {
+      console.error("Error sending contact admin notifications:", error);
+    }
+  }
+};
+
+// ==================== NOTIFICATION SETTINGS API ====================
+const getNotificationSettingsApi: RequestHandler = async (req, res) => {
+  try {
+    const settings = await getNotificationSettings();
+    return res.json({ success: true, data: settings });
+  } catch (error) {
+    console.error("Get notification settings error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+const updateNotificationSettings: RequestHandler = async (req, res) => {
+  try {
+    const updates = req.body;
+
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      for (const [key, value] of Object.entries(updates)) {
+        await connection.execute(
+          "INSERT INTO notification_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+          [key, value],
+        );
+      }
+
+      await connection.commit();
+      return res.json({
+        success: true,
+        message: "Settings updated successfully",
+      });
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error("Update notification settings error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+const getAdminNotifications: RequestHandler = async (req, res) => {
+  try {
+    const notifications = await query<Array<any>>(
+      `SELECT an.*, a.email, a.first_name, a.last_name 
+       FROM admin_notifications an 
+       INNER JOIN admins a ON an.admin_id = a.id 
+       WHERE a.is_active = 1 
+       ORDER BY a.first_name, a.last_name`,
+    );
+
+    return res.json({ success: true, data: notifications });
+  } catch (error) {
+    console.error("Get admin notifications error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+const updateAdminNotifications: RequestHandler = async (req, res) => {
+  try {
+    const { admin_id, notification_type, is_enabled } = req.body;
+
+    await query(
+      "INSERT INTO admin_notifications (admin_id, notification_type, is_enabled) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE is_enabled = VALUES(is_enabled)",
+      [admin_id, notification_type, is_enabled],
+    );
+
+    return res.json({
+      success: true,
+      message: "Notification settings updated successfully",
+    });
+  } catch (error) {
+    console.error("Update admin notifications error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+// Get SMTP settings from environment (read-only for admin interface)
+const getSMTPSettingsApi: RequestHandler = async (req, res) => {
+  try {
+    const settings = getSMTPSettings();
+
+    // Return masked password for security
+    const maskedSettings = {
+      ...settings,
+      smtp_password: settings.smtp_password ? "••••••••" : "",
+    };
+
+    return res.json({ success: true, data: maskedSettings });
+  } catch (error) {
+    console.error("Get SMTP settings error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+// Test email configuration
+const testEmail: RequestHandler = async (req, res) => {
+  try {
+    const { email, settings: testSettings } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: "Email address is required",
+      });
+    }
+
+    // Create temporary transporter with test settings
+    let transporter;
+    if (testSettings) {
+      // Use provided test settings
+      transporter = nodemailer.createTransport({
+        host: testSettings.smtp_host,
+        port: parseInt(testSettings.smtp_port || "587"),
+        secure: testSettings.smtp_secure === "ssl",
+        auth: {
+          user: testSettings.smtp_username,
+          pass: testSettings.smtp_password,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+      });
+    } else {
+      // Use environment settings
+      transporter = createEmailTransporter();
+    }
+
+    if (!transporter) {
+      return res.status(400).json({
+        success: false,
+        error:
+          "Email configuration not available. Please check environment variables.",
+      });
+    }
+
+    const currentSettings = testSettings || getSMTPSettings();
+
+    // Send test email
+    const mailOptions = {
+      from: `${currentSettings.from_name || "Trenor"} <${currentSettings.from_email}>`,
+      to: email,
+      subject: "Prueba de Configuración SMTP - Trenor Admin",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #2c5aa0 0%, #1a365d 100%); color: white; padding: 30px; text-align: center;">
+            <h1>🧪 Prueba de Email Exitosa</h1>
+            <p>Tu configuración SMTP está funcionando correctamente</p>
+          </div>
+          <div style="padding: 30px; background-color: #f8f9fa;">
+            <h2>Configuración Verificada</h2>
+            <ul>
+              <li><strong>Servidor:</strong> ${currentSettings.smtp_host}</li>
+              <li><strong>Puerto:</strong> ${currentSettings.smtp_port}</li>
+              <li><strong>Seguridad:</strong> ${currentSettings.smtp_secure?.toUpperCase()}</li>
+              <li><strong>Usuario:</strong> ${currentSettings.smtp_username}</li>
+            </ul>
+            <p style="margin-top: 20px; padding: 15px; background-color: #d4edda; border-left: 4px solid #28a745; color: #155724;">
+              ✅ La configuración SMTP ha sido verificada exitosamente. Los emails de notificación funcionarán correctamente.
+            </p>
+          </div>
+          <div style="background-color: #2c5aa0; color: white; padding: 20px; text-align: center; font-size: 14px;">
+            <p>&copy; 2024 ${currentSettings.company_name || "Trenor"}. Sistema de Administración</p>
+          </div>
+        </div>
+      `,
+      text: `Prueba de Email SMTP - La configuración está funcionando correctamente.
+      
+Servidor: ${currentSettings.smtp_host}
+Puerto: ${currentSettings.smtp_port}
+Seguridad: ${currentSettings.smtp_secure}
+Usuario: ${currentSettings.smtp_username}
+
+La configuración SMTP ha sido verificada exitosamente.`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res.json({
+      success: true,
+      message: "Test email sent successfully",
+    });
+  } catch (error) {
+    console.error("Test email error:", error);
+    return res.status(500).json({
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error sending test email",
+    });
+  }
+};
+
+// ==================== ADMIN CONTACT & SUPPORT ====================
+const getContactSubmissions: RequestHandler = async (req, res) => {
+  try {
+    const { page = "1", limit = "20", status, priority } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page as string));
+    const limitNum = Math.min(Math.max(1, parseInt(limit as string)), 100);
+    const offset = (pageNum - 1) * limitNum;
+
+    const conditions: string[] = [];
+    const params: any[] = [];
+
+    if (status) {
+      conditions.push("c.status = ?");
+      params.push(status);
+    }
+
+    if (priority) {
+      conditions.push("c.priority = ?");
+      params.push(priority);
+    }
+
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    // Count total
+    const countResult = await query<any[]>(
+      `SELECT COUNT(*) as total FROM contact_submissions c ${whereClause}`,
+      params,
+    );
+    const total = countResult[0]?.total || 0;
+
+    // Get submissions with assigned admin info
+    const submissions = await query<any[]>(
+      `SELECT c.*, 
+              a.first_name as assigned_first_name, 
+              a.last_name as assigned_last_name,
+              (SELECT COUNT(*) FROM support_responses sr WHERE sr.contact_submission_id = c.id) as response_count
+       FROM contact_submissions c
+       LEFT JOIN admins a ON c.assigned_to = a.id
+       ${whereClause}
+       ORDER BY c.created_at DESC
+       LIMIT ? OFFSET ?`,
+      [...params, limitNum, offset],
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: submissions,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (error) {
+    console.error("Get contact submissions error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+const getContactSubmissionById: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get submission with assigned admin info
+    const submissions = await query<any[]>(
+      `SELECT c.*, 
+              a.first_name as assigned_first_name, 
+              a.last_name as assigned_last_name
+       FROM contact_submissions c
+       LEFT JOIN admins a ON c.assigned_to = a.id
+       WHERE c.id = ?`,
+      [id],
+    );
+
+    if (submissions.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Contact submission not found",
+      });
+    }
+
+    // Get responses
+    const responses = await query<any[]>(
+      `SELECT sr.*, 
+              a.first_name as admin_first_name,
+              a.last_name as admin_last_name
+       FROM support_responses sr
+       LEFT JOIN admins a ON sr.admin_id = a.id
+       WHERE sr.contact_submission_id = ?
+       ORDER BY sr.created_at ASC`,
+      [id],
+    );
+
+    const submission = {
+      ...submissions[0],
+      responses,
+    };
+
+    return res.status(200).json({
+      success: true,
+      data: submission,
+    });
+  } catch (error) {
+    console.error("Get contact submission error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+const updateContactSubmission: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, priority, assigned_to } = req.body;
+
+    const updates: string[] = [];
+    const params: any[] = [];
+
+    if (status) {
+      updates.push("status = ?");
+      params.push(status);
+    }
+
+    if (priority) {
+      updates.push("priority = ?");
+      params.push(priority);
+    }
+
+    if (assigned_to !== undefined) {
+      updates.push("assigned_to = ?");
+      params.push(assigned_to === "" ? null : assigned_to);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No fields to update",
+      });
+    }
+
+    updates.push("updated_at = NOW()");
+    params.push(id);
+
+    await query(
+      `UPDATE contact_submissions SET ${updates.join(", ")} WHERE id = ?`,
+      params,
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Contact submission updated successfully",
+    });
+  } catch (error) {
+    console.error("Update contact submission error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+const addSupportResponse: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { message, is_internal_note = false, admin_id } = req.body;
+
+    if (!message) {
+      return res.status(400).json({
+        success: false,
+        message: "Message is required",
+      });
+    }
+
+    const [result] = await pool.execute(
+      `INSERT INTO support_responses (contact_submission_id, admin_id, message, is_internal_note) 
+       VALUES (?, ?, ?, ?)`,
+      [id, admin_id || null, message, is_internal_note],
+    );
+
+    // Update submission status to in_progress if it's still new
+    await query(
+      `UPDATE contact_submissions 
+       SET status = CASE WHEN status = 'new' THEN 'in_progress' ELSE status END,
+           updated_at = NOW()
+       WHERE id = ?`,
+      [id],
+    );
+
+    return res.status(201).json({
+      success: true,
+      data: { id: (result as any).insertId },
+      message: "Response added successfully",
+    });
+  } catch (error) {
+    console.error("Add support response error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+const deleteContactSubmission: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if submission exists
+    const submissions = await query<any[]>(
+      "SELECT id FROM contact_submissions WHERE id = ?",
+      [id],
+    );
+
+    if (submissions.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Contact submission not found",
+      });
+    }
+
+    // Delete submission (responses will be cascade deleted)
+    await query("DELETE FROM contact_submissions WHERE id = ?", [id]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Contact submission deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete contact submission error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+// ==================== ADMIN FAQ MANAGEMENT ====================
+const createFAQCategory: RequestHandler = async (req, res) => {
+  try {
+    const { name, slug, description, sort_order = 0 } = req.body;
+
+    if (!name || !slug) {
+      return res.status(400).json({
+        success: false,
+        message: "Name and slug are required",
+      });
+    }
+
+    const [result] = await pool.execute(
+      `INSERT INTO faq_categories (name, slug, description, sort_order) 
+       VALUES (?, ?, ?, ?)`,
+      [name, slug, description || null, sort_order],
+    );
+
+    return res.status(201).json({
+      success: true,
+      data: { id: (result as any).insertId },
+      message: "FAQ category created successfully",
+    });
+  } catch (error: any) {
+    console.error("Create FAQ category error:", error);
+
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
+        success: false,
+        message: "A category with this slug already exists",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+const updateFAQCategory: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, slug, description, sort_order, is_active } = req.body;
+
+    const updates: string[] = [];
+    const params: any[] = [];
+
+    if (name) {
+      updates.push("name = ?");
+      params.push(name);
+    }
+
+    if (slug) {
+      updates.push("slug = ?");
+      params.push(slug);
+    }
+
+    if (description !== undefined) {
+      updates.push("description = ?");
+      params.push(description || null);
+    }
+
+    if (sort_order !== undefined) {
+      updates.push("sort_order = ?");
+      params.push(sort_order);
+    }
+
+    if (is_active !== undefined) {
+      updates.push("is_active = ?");
+      params.push(is_active);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No fields to update",
+      });
+    }
+
+    updates.push("updated_at = NOW()");
+    params.push(id);
+
+    await query(
+      `UPDATE faq_categories SET ${updates.join(", ")} WHERE id = ?`,
+      params,
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "FAQ category updated successfully",
+    });
+  } catch (error: any) {
+    console.error("Update FAQ category error:", error);
+
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
+        success: false,
+        message: "A category with this slug already exists",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+const deleteFAQCategory: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if category has FAQ items
+    const items = await query<any[]>(
+      "SELECT COUNT(*) as count FROM faq_items WHERE category_id = ?",
+      [id],
+    );
+
+    if (items[0]?.count > 0) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Cannot delete category that contains FAQ items. Please delete the items first.",
+      });
+    }
+
+    await query("DELETE FROM faq_categories WHERE id = ?", [id]);
+
+    return res.status(200).json({
+      success: true,
+      message: "FAQ category deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete FAQ category error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+const createFAQItem: RequestHandler = async (req, res) => {
+  try {
+    const {
+      category_id,
+      question,
+      answer,
+      sort_order = 0,
+      created_by,
+    } = req.body;
+
+    if (!category_id || !question || !answer) {
+      return res.status(400).json({
+        success: false,
+        message: "Category ID, question, and answer are required",
+      });
+    }
+
+    const [result] = await pool.execute(
+      `INSERT INTO faq_items (category_id, question, answer, sort_order, created_by) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [category_id, question, answer, sort_order, created_by || null],
+    );
+
+    return res.status(201).json({
+      success: true,
+      data: { id: (result as any).insertId },
+      message: "FAQ item created successfully",
+    });
+  } catch (error) {
+    console.error("Create FAQ item error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+const updateFAQItem: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { category_id, question, answer, sort_order, is_active } = req.body;
+
+    const updates: string[] = [];
+    const params: any[] = [];
+
+    if (category_id) {
+      updates.push("category_id = ?");
+      params.push(category_id);
+    }
+
+    if (question) {
+      updates.push("question = ?");
+      params.push(question);
+    }
+
+    if (answer) {
+      updates.push("answer = ?");
+      params.push(answer);
+    }
+
+    if (sort_order !== undefined) {
+      updates.push("sort_order = ?");
+      params.push(sort_order);
+    }
+
+    if (is_active !== undefined) {
+      updates.push("is_active = ?");
+      params.push(is_active);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No fields to update",
+      });
+    }
+
+    updates.push("updated_at = NOW()");
+    params.push(id);
+
+    await query(
+      `UPDATE faq_items SET ${updates.join(", ")} WHERE id = ?`,
+      params,
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "FAQ item updated successfully",
+    });
+  } catch (error) {
+    console.error("Update FAQ item error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+const deleteFAQItem: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await query("DELETE FROM faq_items WHERE id = ?", [id]);
+
+    return res.status(200).json({
+      success: true,
+      message: "FAQ item deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete FAQ item error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
 // ==================== QUOTES ====================
 const getQuotes: RequestHandler = async (req, res) => {
   try {
@@ -631,6 +1654,23 @@ const createQuote: RequestHandler = async (req, res) => {
 
       await connection.commit();
 
+      // Send email notifications after successful quote creation
+      try {
+        const quoteEmailData = {
+          quote_id: quoteId,
+          quote_number: quoteNumber,
+          ...quoteData,
+        };
+
+        // Send notifications asynchronously (don't wait for completion)
+        sendQuoteNotifications(quoteEmailData).catch((error) => {
+          console.error("Error sending quote notifications:", error);
+        });
+      } catch (emailError) {
+        console.error("Error preparing quote notifications:", emailError);
+        // Don't fail the quote creation if email fails
+      }
+
       return res.status(201).json({
         success: true,
         data: { id: quoteId, quote_number: quoteNumber },
@@ -643,6 +1683,133 @@ const createQuote: RequestHandler = async (req, res) => {
     }
   } catch (error) {
     console.error("Create quote error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+// ==================== CONTACT & SUPPORT ====================
+const submitContactForm: RequestHandler = async (req, res) => {
+  try {
+    const { name, email, phone, company, subject, message } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, email, subject, and message are required",
+      });
+    }
+
+    // Insert contact submission
+    const [result] = await pool.execute(
+      `INSERT INTO contact_submissions (name, email, phone, company, subject, message, status, priority) 
+       VALUES (?, ?, ?, ?, ?, ?, 'new', 'medium')`,
+      [name, email, phone || null, company || null, subject, message],
+    );
+
+    const submissionId = (result as any).insertId;
+
+    // Send email notifications to admins
+    try {
+      const contactEmailData = {
+        submission_id: submissionId,
+        name,
+        email,
+        phone: phone || "Not provided",
+        company: company || "Not provided",
+        subject,
+        message,
+      };
+
+      // Send notifications asynchronously
+      sendContactNotifications(contactEmailData).catch((error) => {
+        console.error("Error sending contact notifications:", error);
+      });
+    } catch (emailError) {
+      console.error("Error preparing contact notifications:", emailError);
+    }
+
+    return res.status(201).json({
+      success: true,
+      data: { id: submissionId },
+      message:
+        "Your message has been sent successfully. We will get back to you soon.",
+    });
+  } catch (error) {
+    console.error("Submit contact form error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+// ==================== FAQ ====================
+const getFAQCategories: RequestHandler = async (req, res) => {
+  try {
+    const { include_inactive } = req.query;
+
+    let whereClause = "";
+    if (!include_inactive) {
+      whereClause = "WHERE is_active = TRUE";
+    }
+
+    const categories = await query<any[]>(
+      `SELECT id, name, slug, description, sort_order, is_active 
+       FROM faq_categories 
+       ${whereClause}
+       ORDER BY sort_order ASC, name ASC`,
+    );
+
+    return res.status(200).json({
+      success: true,
+      categories,
+    });
+  } catch (error) {
+    console.error("Get FAQ categories error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
+  }
+};
+
+const getFAQItems: RequestHandler = async (req, res) => {
+  try {
+    const { category_id, include_inactive } = req.query;
+
+    let whereClause = "";
+    const params: any[] = [];
+
+    if (!include_inactive) {
+      whereClause = "WHERE f.is_active = TRUE";
+    }
+
+    if (category_id) {
+      whereClause += whereClause ? " AND " : "WHERE ";
+      whereClause += "f.category_id = ?";
+      params.push(parseInt(category_id as string));
+    }
+
+    const items = await query<any[]>(
+      `SELECT f.id, f.category_id, f.question, f.answer, f.sort_order, f.is_active,
+              c.name as category_name, c.slug as category_slug
+       FROM faq_items f
+       JOIN faq_categories c ON f.category_id = c.id
+       ${whereClause}
+       ORDER BY f.category_id, f.sort_order ASC, f.id ASC`,
+      params,
+    );
+
+    return res.status(200).json({
+      success: true,
+      items,
+    });
+  } catch (error) {
+    console.error("Get FAQ items error:", error);
     return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : "Internal server error",
@@ -866,37 +2033,69 @@ const getSubcategories: RequestHandler = async (req, res) => {
 
 const createSubcategory: RequestHandler = async (req, res) => {
   try {
+    console.log(
+      "[createSubcategory] Request body:",
+      JSON.stringify(req.body, null, 2),
+    );
+
     const { name, slug, description, category_id, main_image, extra_images } =
       req.body;
 
+    console.log("[createSubcategory] Extracted values:", {
+      name,
+      slug,
+      description,
+      category_id,
+      main_image,
+      extra_images,
+    });
+
     if (!name || !slug || !category_id) {
+      console.log(
+        "[createSubcategory] Validation failed - missing required fields",
+      );
       return res.status(400).json({
         success: false,
         message: "Name, slug, and category_id are required",
       });
     }
 
+    const queryParams = [
+      name,
+      slug,
+      description || null,
+      category_id || null,
+      main_image || null,
+      extra_images || null,
+    ];
+
+    console.log("[createSubcategory] SQL query params:", queryParams);
+
     const [result] = await pool.execute(
       `INSERT INTO subcategories (name, slug, description, category_id, main_image, extra_images, is_active) 
        VALUES (?, ?, ?, ?, ?, ?, 1)`,
-      [
-        name,
-        slug,
-        description || null,
-        parseInt(category_id),
-        main_image || null,
-        extra_images || null,
-      ],
+      queryParams,
     );
 
+    console.log("[createSubcategory] SQL result:", result);
+
     const insertId = (result as any).insertId;
+
+    console.log("[createSubcategory] Success - insertId:", insertId);
 
     res.status(201).json({
       success: true,
       data: { id: insertId },
     });
   } catch (error: any) {
-    console.error("Error creating subcategory:", error);
+    console.error("[createSubcategory] Error occurred:", {
+      message: error.message,
+      code: error.code,
+      errno: error.errno,
+      sql: error.sql,
+      sqlMessage: error.sqlMessage,
+      stack: error.stack,
+    });
 
     if (error.code === "ER_DUP_ENTRY") {
       return res.status(409).json({
@@ -908,6 +2107,7 @@ const createSubcategory: RequestHandler = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error",
+      error: error.message, // Include error message for debugging
     });
   }
 };
@@ -915,6 +2115,12 @@ const createSubcategory: RequestHandler = async (req, res) => {
 const updateSubcategory: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log("[updateSubcategory] Request params ID:", id);
+    console.log(
+      "[updateSubcategory] Request body:",
+      JSON.stringify(req.body, null, 2),
+    );
+
     const {
       name,
       slug,
@@ -931,33 +2137,41 @@ const updateSubcategory: RequestHandler = async (req, res) => {
     if (name !== undefined) {
       updates.push("name = ?");
       values.push(name);
+      console.log("[updateSubcategory] Adding name:", name);
     }
     if (slug !== undefined) {
       updates.push("slug = ?");
       values.push(slug);
+      console.log("[updateSubcategory] Adding slug:", slug);
     }
     if (description !== undefined) {
       updates.push("description = ?");
       values.push(description);
+      console.log("[updateSubcategory] Adding description:", description);
     }
     if (category_id !== undefined) {
       updates.push("category_id = ?");
-      values.push(parseInt(category_id));
+      values.push(category_id);
+      console.log("[updateSubcategory] Adding category_id:", category_id);
     }
     if (main_image !== undefined) {
       updates.push("main_image = ?");
       values.push(main_image);
+      console.log("[updateSubcategory] Adding main_image:", main_image);
     }
     if (extra_images !== undefined) {
       updates.push("extra_images = ?");
       values.push(extra_images);
+      console.log("[updateSubcategory] Adding extra_images:", extra_images);
     }
     if (is_active !== undefined) {
       updates.push("is_active = ?");
       values.push(is_active ? 1 : 0);
+      console.log("[updateSubcategory] Adding is_active:", is_active ? 1 : 0);
     }
 
     if (updates.length === 0) {
+      console.log("[updateSubcategory] No fields to update");
       return res.status(400).json({
         success: false,
         message: "No fields to update",
@@ -966,10 +2180,13 @@ const updateSubcategory: RequestHandler = async (req, res) => {
 
     values.push(parseInt(id));
 
-    const [result] = await pool.execute(
-      `UPDATE subcategories SET ${updates.join(", ")} WHERE id = ?`,
-      values,
-    );
+    const sqlQuery = `UPDATE subcategories SET ${updates.join(", ")} WHERE id = ?`;
+    console.log("[updateSubcategory] SQL query:", sqlQuery);
+    console.log("[updateSubcategory] Query values:", values);
+
+    const [result] = await pool.execute(sqlQuery, values);
+
+    console.log("[updateSubcategory] SQL result:", result);
 
     if ((result as any).affectedRows === 0) {
       return res.status(404).json({
@@ -983,7 +2200,14 @@ const updateSubcategory: RequestHandler = async (req, res) => {
       message: "Subcategory updated successfully",
     });
   } catch (error: any) {
-    console.error("Error updating subcategory:", error);
+    console.error("[updateSubcategory] Error occurred:", {
+      message: error.message,
+      code: error.code,
+      errno: error.errno,
+      sql: error.sql,
+      sqlMessage: error.sqlMessage,
+      stack: error.stack,
+    });
 
     if (error.code === "ER_DUP_ENTRY") {
       return res.status(409).json({
@@ -995,6 +2219,7 @@ const updateSubcategory: RequestHandler = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error",
+      error: error.message, // Include error message for debugging
     });
   }
 };
@@ -1867,17 +3092,26 @@ const sendAdminCode: RequestHandler = async (req, res) => {
     const sessionCode = Math.floor(100000 + Math.random() * 900000);
     console.log("🔢 Generated code:", sessionCode);
 
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    // Store code in admin_sessions table
+    // Store code in admin_sessions table using database time for consistency
     console.log("💾 Inserting session code into database...");
     await pool.query(
       `INSERT INTO admin_sessions (user_id, session_code, is_active, expires_at) 
-       VALUES (?, ?, 0, ?)
+       VALUES (?, ?, 0, DATE_ADD(NOW(), INTERVAL 10 MINUTE))
        ON DUPLICATE KEY UPDATE session_code = VALUES(session_code), expires_at = VALUES(expires_at)`,
-      [admin_id, sessionCode, expiresAt],
+      [admin_id, sessionCode],
     );
     console.log("✅ Session code saved");
+
+    // Get the actual expiration time that was set
+    const [sessionInfo] = await pool.query<any[]>(
+      `SELECT expires_at, NOW() as db_now FROM admin_sessions WHERE user_id = ? AND session_code = ?`,
+      [admin_id, sessionCode],
+    );
+
+    if (sessionInfo.length > 0) {
+      console.log("📅 Session expires at (DB):", sessionInfo[0].expires_at);
+      console.log("📅 Current database time:", sessionInfo[0].db_now);
+    }
 
     // Send email with verification code
     console.log("📧 Calling sendAdminVerificationEmail...");
@@ -2144,46 +3378,92 @@ Este es un mensaje automático del sistema - No responder
 
 const verifyAdminCode: RequestHandler = async (req, res) => {
   try {
+    console.log("🔵 verifyAdminCode endpoint called");
+    console.log("   Request body:", req.body);
+
     const { admin_id, code } = req.body;
 
     if (!admin_id || !code) {
+      console.log("❌ Missing admin_id or code");
       return res.status(400).json({
         success: false,
         message: "Admin ID and code are required",
       });
     }
 
-    // Check code in admin_sessions
+    console.log("   Admin ID:", admin_id);
+    console.log("   Code:", code, typeof code);
+
+    // Ensure code is treated as a number for comparison
+    const codeAsNumber = parseInt(code, 10);
+    console.log("   Code as number:", codeAsNumber);
+
+    // First, let's see all sessions for this admin
+    console.log("📊 Checking all sessions for admin...");
+    const [allSessions] = await pool.query<any[]>(
+      `SELECT * FROM admin_sessions WHERE user_id = ?`,
+      [admin_id],
+    );
+    console.log("   All sessions:", allSessions);
+
+    // Check code in admin_sessions - try both string and number formats
+    console.log("🔍 Looking for matching session...");
     const [rows] = await pool.query<any[]>(
-      `SELECT * FROM admin_sessions 
-       WHERE user_id = ? AND session_code = ? AND expires_at > NOW()`,
-      [admin_id, code],
+      `SELECT *, expires_at, NOW() as db_now FROM admin_sessions 
+       WHERE user_id = ? AND (session_code = ? OR session_code = ?) AND expires_at > NOW()`,
+      [admin_id, code, codeAsNumber],
     );
 
+    console.log("   Matching sessions:", rows);
+
     if (rows.length === 0) {
+      console.log("❌ No matching sessions found");
+
+      // Let's check if there's a session with the right code but expired
+      const [expiredRows] = await pool.query<any[]>(
+        `SELECT *, expires_at, NOW() as db_now FROM admin_sessions 
+         WHERE user_id = ? AND (session_code = ? OR session_code = ?)`,
+        [admin_id, code, codeAsNumber],
+      );
+
+      if (expiredRows.length > 0) {
+        console.log("🕐 Found expired session:", expiredRows[0]);
+        console.log("   Session expires at:", expiredRows[0].expires_at);
+        console.log("   Current database time:", expiredRows[0].db_now);
+      }
+
       return res.status(401).json({
         success: false,
         message: "Invalid or expired code",
       });
     }
 
+    console.log("✅ Valid session found");
+
     // Generate new session code for the active session
     const sessionCode = Math.floor(100000 + Math.random() * 900000);
     const sessionExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
+    console.log("🔢 Generated new session code:", sessionCode);
+    console.log("📅 New session expires at:", sessionExpires);
+
     // Update session to active with new code and expiration
+    console.log("💾 Updating session to active...");
     await pool.query(
       `UPDATE admin_sessions 
        SET is_active = 1, session_code = ?, expires_at = ? 
-       WHERE user_id = ? AND session_code = ?`,
-      [sessionCode, sessionExpires, admin_id, code],
+       WHERE user_id = ? AND (session_code = ? OR session_code = ?)`,
+      [sessionCode, sessionExpires, admin_id, code, codeAsNumber],
     );
 
     // Get admin info
+    console.log("👤 Getting admin info...");
     const [admins] = await pool.query<any[]>(
       `SELECT id, email, role, first_name, last_name FROM admins WHERE id = ?`,
       [admin_id],
     );
+
+    console.log("✅ Admin found:", admins[0]);
 
     res.json({
       success: true,
@@ -2191,7 +3471,7 @@ const verifyAdminCode: RequestHandler = async (req, res) => {
       token: sessionCode.toString(),
     });
   } catch (error) {
-    console.error("Error verifying admin code:", error);
+    console.error("❌ Error verifying admin code:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
@@ -2351,143 +3631,7 @@ const deleteAdminUser: RequestHandler = async (req, res) => {
 };
 
 // ==================== ADMIN CONTENT ====================
-const getContentPages: RequestHandler = async (req, res) => {
-  try {
-    const [pages] = await pool.query<any[]>(
-      `SELECT * FROM content_pages ORDER BY slug`,
-    );
-
-    res.json({ success: true, data: pages });
-  } catch (error) {
-    console.error("Error fetching content pages:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
-};
-
-const getContentPageBySlug: RequestHandler = async (req, res) => {
-  try {
-    const { slug } = req.params;
-
-    const [pages] = await pool.query<any[]>(
-      `SELECT * FROM content_pages WHERE slug = ?`,
-      [slug],
-    );
-
-    if (pages.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Content page not found",
-      });
-    }
-
-    res.json({ success: true, data: pages[0] });
-  } catch (error) {
-    console.error("Error fetching content page:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
-};
-
-const createContentPage: RequestHandler = async (req, res) => {
-  try {
-    const { slug, title, content } = req.body;
-
-    if (!slug || !title) {
-      return res.status(400).json({
-        success: false,
-        message: "Slug and title are required",
-      });
-    }
-
-    const [result] = await pool.execute(
-      `INSERT INTO content_pages (slug, title, content) VALUES (?, ?, ?)`,
-      [slug, title, content || null],
-    );
-
-    res.status(201).json({
-      success: true,
-      data: { id: (result as any).insertId },
-    });
-  } catch (error: any) {
-    console.error("Error creating content page:", error);
-
-    if (error.code === "ER_DUP_ENTRY") {
-      return res.status(409).json({
-        success: false,
-        message: "A content page with this slug already exists",
-      });
-    }
-
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
-};
-
-const updateContentPage: RequestHandler = async (req, res) => {
-  try {
-    const { slug } = req.params;
-    const { title, content } = req.body;
-
-    const updates: string[] = [];
-    const values: any[] = [];
-
-    if (title !== undefined) {
-      updates.push("title = ?");
-      values.push(title);
-    }
-    if (content !== undefined) {
-      updates.push("content = ?");
-      values.push(content);
-    }
-
-    if (updates.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No fields to update",
-      });
-    }
-
-    values.push(slug);
-
-    const [result] = await pool.execute(
-      `UPDATE content_pages SET ${updates.join(", ")} WHERE slug = ?`,
-      values,
-    );
-
-    if ((result as any).affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Content page not found",
-      });
-    }
-
-    res.json({ success: true, message: "Content page updated successfully" });
-  } catch (error) {
-    console.error("Error updating content page:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
-};
-
-const deleteContentPage: RequestHandler = async (req, res) => {
-  try {
-    const { slug } = req.params;
-
-    const [result] = await pool.execute(
-      "DELETE FROM content_pages WHERE slug = ?",
-      [slug],
-    );
-
-    if ((result as any).affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Content page not found",
-      });
-    }
-
-    res.json({ success: true, message: "Content page deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting content page:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
-};
+// Content pages functionality removed - table doesn't exist in schema
 
 // ==================== ADMIN QUOTES ====================
 const getAdminQuotes: RequestHandler = async (req, res) => {
@@ -3070,6 +4214,13 @@ function createServer() {
   expressApp.get("/api/quotes/:id", getQuoteById);
   expressApp.post("/api/quotes", createQuote);
 
+  // Contact & Support
+  expressApp.post("/api/contact", submitContactForm);
+
+  // FAQ
+  expressApp.get("/api/faq/categories", getFAQCategories);
+  expressApp.get("/api/faq/items", getFAQItems);
+
   // ==================== CONFIGURE ADMIN ROUTES ====================
 
   // Admin Authentication (no auth required for these)
@@ -3121,17 +4272,53 @@ function createServer() {
   expressApp.put("/api/admin/users/:id", updateAdminUser);
   expressApp.delete("/api/admin/users/:id", deleteAdminUser);
 
-  // Admin Content Pages (protected)
-  expressApp.get("/api/admin/content", getContentPages);
-  expressApp.get("/api/admin/content/:slug", getContentPageBySlug);
-  expressApp.post("/api/admin/content", createContentPage);
-  expressApp.put("/api/admin/content/:slug", updateContentPage);
-  expressApp.delete("/api/admin/content/:slug", deleteContentPage);
-
   // Admin Quotes (protected)
   expressApp.get("/api/admin/quotes", getAdminQuotes);
   expressApp.get("/api/admin/quotes/:id", getQuoteById);
   expressApp.put("/api/admin/quotes/:id/status", updateQuoteStatus);
+
+  // Admin Notification Settings (protected)
+  expressApp.get(
+    "/api/admin/notification-settings",
+    getNotificationSettingsApi,
+  );
+  expressApp.put(
+    "/api/admin/notification-settings",
+    updateNotificationSettings,
+  );
+  expressApp.get("/api/admin/smtp-settings", getSMTPSettingsApi);
+  expressApp.post("/api/admin/test-email", testEmail);
+
+  // Admin Notification Management (protected)
+  expressApp.get("/api/admin/notifications", getAdminNotifications);
+  expressApp.put("/api/admin/notifications", updateAdminNotifications);
+
+  // Admin Contact & Support (protected)
+  expressApp.get("/api/admin/contact-submissions", getContactSubmissions);
+  expressApp.get(
+    "/api/admin/contact-submissions/:id",
+    getContactSubmissionById,
+  );
+  expressApp.put("/api/admin/contact-submissions/:id", updateContactSubmission);
+  expressApp.post(
+    "/api/admin/contact-submissions/:id/responses",
+    addSupportResponse,
+  );
+  expressApp.delete(
+    "/api/admin/contact-submissions/:id",
+    deleteContactSubmission,
+  );
+
+  // Admin FAQ Management (protected)
+  expressApp.get("/api/admin/faq/categories", getFAQCategories);
+  expressApp.post("/api/admin/faq/categories", createFAQCategory);
+  expressApp.put("/api/admin/faq/categories/:id", updateFAQCategory);
+  expressApp.delete("/api/admin/faq/categories/:id", deleteFAQCategory);
+
+  expressApp.get("/api/admin/faq/items", getFAQItems);
+  expressApp.post("/api/admin/faq/items", createFAQItem);
+  expressApp.put("/api/admin/faq/items/:id", updateFAQItem);
+  expressApp.delete("/api/admin/faq/items/:id", deleteFAQItem);
 
   // 404 handler
   expressApp.use("/api", (_req, res) => {

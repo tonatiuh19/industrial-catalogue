@@ -291,6 +291,105 @@ export interface ModelListResponse {
   data: Model[];
 }
 
+// ============================================
+// Contact & Support Types
+// ============================================
+
+export interface ContactSubmission {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  subject: string;
+  message: string;
+  status: "new" | "in_progress" | "resolved" | "closed";
+  priority: "low" | "medium" | "high" | "urgent";
+  assigned_to?: number;
+  assigned_first_name?: string;
+  assigned_last_name?: string;
+  response_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupportResponse {
+  id: number;
+  contact_submission_id: number;
+  admin_id?: number;
+  admin_first_name?: string;
+  admin_last_name?: string;
+  message: string;
+  is_internal_note: boolean;
+  created_at: string;
+}
+
+export interface CreateContactSubmissionRequest {
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  subject: string;
+  message: string;
+}
+
+export interface ContactSubmissionListResponse
+  extends PaginatedResponse<ContactSubmission> {}
+
+// ============================================
+// FAQ Types
+// ============================================
+
+export interface FAQCategory {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FAQItem {
+  id: number;
+  category_id: number;
+  question: string;
+  answer: string;
+  sort_order: number;
+  is_active: boolean;
+  created_by?: number;
+  created_at: string;
+  updated_at: string;
+  category_name?: string;
+  category_slug?: string;
+}
+
+export interface CreateFAQCategoryRequest {
+  name: string;
+  slug: string;
+  description?: string;
+  sort_order?: number;
+}
+
+export interface CreateFAQItemRequest {
+  category_id: number;
+  question: string;
+  answer: string;
+  sort_order?: number;
+  created_by?: number;
+}
+
+export interface FAQCategoryListResponse {
+  success: boolean;
+  categories: FAQCategory[];
+}
+
+export interface FAQItemListResponse {
+  success: boolean;
+  items: FAQItem[];
+}
+
 /**
  * Example response type for /api/demo
  */

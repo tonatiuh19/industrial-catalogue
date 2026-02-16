@@ -40,9 +40,16 @@ import {
   categoriesApi,
   manufacturersApi,
   brandsApi,
+  subcategoriesApi,
 } from "@/services/api.service";
 import { ImageUploadStep } from "@/components/ImageUploadStep";
-import { generateTempId } from "@/services/image-upload.service";
+import {
+  generateTempId,
+  uploadCategoryImages,
+  uploadSubcategoryImages,
+  uploadManufacturerImages,
+  uploadBrandImages,
+} from "@/services/image-upload.service";
 import { useAdminStore } from "@/store/AdminStoreContext";
 import type { Category, Manufacturer, Brand, Subcategory } from "@shared/api";
 
@@ -84,7 +91,7 @@ const getEntityConfig = (type: EntityType) => {
       return {
         title: "Subcategoría",
         icon: Tag,
-        api: {} as any, // Will be implemented
+        api: subcategoriesApi,
         hasSlug: true,
         hasWebsite: false,
         hasManufacturer: false,
@@ -124,7 +131,7 @@ export default function ReferenceDataWizard({
   entity,
 }: ReferenceDataWizardProps) {
   const { toast } = useToast();
-  const { uploadProductImages, state } = useAdminStore();
+  const { state } = useAdminStore();
   const { reference } = state;
   const isEditMode = !!entity;
   const [step, setStep] = useState(1);
@@ -243,9 +250,20 @@ export default function ReferenceDataWizard({
     values: FormValues,
     { setSubmitting }: FormikHelpers<FormValues>,
   ) => {
+    console.log(`[ReferenceDataWizard] handleSubmit called for type: ${type}`);
+    console.log(`[ReferenceDataWizard] isEditMode: ${isEditMode}`);
+    console.log(
+      `[ReferenceDataWizard] Form values:`,
+      JSON.stringify(values, null, 2),
+    );
+    console.log(`[ReferenceDataWizard] Entity:`, entity);
+
     try {
       // Validate main image
       if (!mainImage && !mainImageFile) {
+        console.log(
+          `[ReferenceDataWizard] Missing main image validation failed`,
+        );
         toast({
           title: "Error",
           description: "La imagen principal es requerida",
@@ -285,11 +303,40 @@ export default function ReferenceDataWizard({
       // Upload images if there are new files
       if (mainImageFile || extraImageFiles.length > 0) {
         try {
-          const result = await uploadProductImages(
-            entityId,
-            mainImageFile || undefined,
-            extraImageFiles.length > 0 ? extraImageFiles : undefined,
-          );
+          // Use appropriate upload function based on entity type
+          let result;
+          switch (type) {
+            case "category":
+              result = await uploadCategoryImages(
+                entityId,
+                mainImageFile || undefined,
+                extraImageFiles.length > 0 ? extraImageFiles : undefined,
+              );
+              break;
+            case "subcategory":
+              result = await uploadSubcategoryImages(
+                entityId,
+                mainImageFile || undefined,
+                extraImageFiles.length > 0 ? extraImageFiles : undefined,
+              );
+              break;
+            case "manufacturer":
+              result = await uploadManufacturerImages(
+                entityId,
+                mainImageFile || undefined,
+                extraImageFiles.length > 0 ? extraImageFiles : undefined,
+              );
+              break;
+            case "brand":
+              result = await uploadBrandImages(
+                entityId,
+                mainImageFile || undefined,
+                extraImageFiles.length > 0 ? extraImageFiles : undefined,
+              );
+              break;
+            default:
+              throw new Error(`Unsupported entity type: ${type}`);
+          }
 
           if (!result.success) {
             toast({
@@ -326,19 +373,50 @@ export default function ReferenceDataWizard({
           finalExtraImages.length > 0 ? JSON.stringify(finalExtraImages) : null,
       };
 
+      console.log(
+        `[ReferenceDataWizard] Prepared entityData:`,
+        JSON.stringify(entityData, null, 2),
+      );
+      console.log(`[ReferenceDataWizard] Config API:`, config.api);
+
       // Convert manufacturer_id to number for brands
       if (config.hasManufacturer && entityData.manufacturer_id) {
         entityData.manufacturer_id = Number(entityData.manufacturer_id);
+        console.log(
+          `[ReferenceDataWizard] Converted manufacturer_id to:`,
+          entityData.manufacturer_id,
+        );
       }
 
+      // Convert category_id to number for subcategories
+      if (config.hasCategory && entityData.category_id) {
+        entityData.category_id = Number(entityData.category_id);
+        console.log(
+          `[ReferenceDataWizard] Converted category_id to:`,
+          entityData.category_id,
+        );
+      }
+
+      console.log(
+        `[ReferenceDataWizard] Final entityData before API call:`,
+        JSON.stringify(entityData, null, 2),
+      );
+
       if (isEditMode && entity) {
-        await config.api.update(entity.id, entityData);
+        console.log(
+          `[ReferenceDataWizard] Calling update API for ID:`,
+          entity.id,
+        );
+        const updateResult = await config.api.update(entity.id, entityData);
+        console.log(`[ReferenceDataWizard] Update API result:`, updateResult);
         toast({
           title: "Éxito",
           description: `${config.title} actualizado exitosamente`,
         });
       } else {
-        await config.api.create(entityData);
+        console.log(`[ReferenceDataWizard] Calling create API`);
+        const createResult = await config.api.create(entityData);
+        console.log(`[ReferenceDataWizard] Create API result:`, createResult);
         toast({
           title: "Éxito",
           description: `${config.title} creado exitosamente`,
@@ -348,13 +426,25 @@ export default function ReferenceDataWizard({
       onSuccess();
       handleClose();
     } catch (error: any) {
-      console.error(`${config.title} operation error:`, error);
+      console.error(`[ReferenceDataWizard] ${config.title} operation error:`, {
+        error: error,
+        message: error.message,
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data,
+        stack: error.stack,
+      });
 
       let errorMessage = `Error al ${isEditMode ? "actualizar" : "crear"} ${config.title.toLowerCase()}`;
 
       if (error.response) {
         const status = error.response.status;
         const data = error.response.data;
+
+        console.error(
+          `[ReferenceDataWizard] HTTP Error - Status: ${status}, Data:`,
+          data,
+        );
 
         if (status === 503) {
           errorMessage =
@@ -377,6 +467,8 @@ export default function ReferenceDataWizard({
         errorMessage =
           "Tiempo de espera agotado. Por favor verifica tu conexión.";
       }
+
+      console.error(`[ReferenceDataWizard] Final error message:`, errorMessage);
 
       toast({
         title: "Error",

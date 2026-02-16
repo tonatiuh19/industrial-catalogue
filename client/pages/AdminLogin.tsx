@@ -217,6 +217,20 @@ export default function AdminLogin() {
               Autenticación segura sin contraseña para administradores
             </p>
           </div>
+
+          <div className="pt-6 text-center">
+            <p className="text-xs text-white/60 font-medium">
+              Powered by{" "}
+              <a
+                href="https://disruptinglabs.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/80 hover:text-white transition-colors underline decoration-white/40 hover:decoration-white"
+              >
+                DisruptingLabs.com
+              </a>
+            </p>
+          </div>
         </div>
       </div>
 
