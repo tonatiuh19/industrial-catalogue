@@ -33,6 +33,7 @@ import Settings from "./pages/admin/Settings";
 import SupportTickets from "./pages/admin/SupportTickets";
 import FAQManagement from "./pages/admin/FAQManagement";
 import ScrollToTop from "@/components/ScrollToTop";
+import WhatsAppBubble from "@/components/WhatsAppBubble";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const AppContent = () => {
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <WhatsAppBubble />
       </BrowserRouter>
     </>
   );

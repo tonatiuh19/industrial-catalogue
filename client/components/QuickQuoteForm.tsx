@@ -147,38 +147,18 @@ export default function QuickQuoteForm({
                       MARCA
                     </label>
                     <div className="relative">
-                      <select
+                      <input
                         name="brand"
-                        className="w-full appearance-none bg-white/95 border-2 border-white/30 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 text-sm sm:text-base text-gray-800 font-medium focus:border-white focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200 cursor-pointer hover:bg-white shadow-lg"
-                      >
-                        <option value="" className="text-gray-500">
-                          Selecciona una marca
-                        </option>
+                        type="text"
+                        list="brand-options"
+                        className="w-full bg-white/95 border-2 border-white/30 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 text-sm sm:text-base text-gray-800 font-medium placeholder-gray-500 focus:border-white focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200 hover:bg-white shadow-lg"
+                        placeholder="Selecciona o escribe una marca"
+                      />
+                      <datalist id="brand-options">
                         {brands.map((brand) => (
-                          <option
-                            key={brand.id}
-                            value={brand.name}
-                            className="text-gray-800"
-                          >
-                            {brand.name}
-                          </option>
+                          <option key={brand.id} value={brand.name} />
                         ))}
-                      </select>
-                      <div className="absolute inset-y-0 right-0 flex items-center px-3 sm:px-4 pointer-events-none">
-                        <svg
-                          className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </div>
+                      </datalist>
                     </div>
                   </div>
 

@@ -87,6 +87,12 @@ export default function AdminHome() {
           <CardContent>
             <div className="text-2xl font-bold text-accent">{quotesTotal}</div>
             <p className="text-xs text-slate-600">Cotizaciones pendientes</p>
+            <a
+              href="/admin/quotes"
+              className="mt-3 inline-block text-xs font-semibold text-accent hover:underline"
+            >
+              Ver Cotizaciones →
+            </a>
           </CardContent>
         </Card>
 

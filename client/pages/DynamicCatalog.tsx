@@ -16,7 +16,7 @@ import NewQuoteWizard from "@/components/NewQuoteWizard";
 import { useQuote } from "@/context/QuoteContext";
 import SEO from "@/components/SEO";
 import { getImageUrl } from "@/services/image-upload.service";
-import { catalogApi } from "@/services/api.service";
+import { catalogApi, subcategoriesApi } from "@/services/api.service";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -39,6 +39,7 @@ export default function DynamicCatalog() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [catalogData, setCatalogData] = useState<CatalogData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [siblingSubcategories, setSiblingSubcategories] = useState<any[]>([]);
   const { isNewWizardOpen, openNewWizard, closeNewWizard, prefillData } =
     useQuote();
   const [selectedFilters, setSelectedFilters] = useState({
@@ -54,6 +55,28 @@ export default function DynamicCatalog() {
   useEffect(() => {
     fetchCatalogData();
   }, [type, id, selectedFilters]);
+
+  // Fetch sibling subcategories when viewing a subcategory
+  useEffect(() => {
+    if (type === "subcategory" && catalogData?.mainItem?.category_id) {
+      subcategoriesApi
+        .getAll({ category_id: catalogData.mainItem.category_id })
+        .then((res) => {
+          const all = Array.isArray(res.data?.data)
+            ? res.data.data
+            : Array.isArray(res.data)
+              ? res.data
+              : [];
+          // Exclude the currently viewed subcategory
+          setSiblingSubcategories(
+            all.filter((s: any) => s.id !== catalogData.mainItem!.id),
+          );
+        })
+        .catch(() => setSiblingSubcategories([]));
+    } else {
+      setSiblingSubcategories([]);
+    }
+  }, [type, catalogData?.mainItem?.id, catalogData?.mainItem?.category_id]);
 
   const fetchCatalogData = async () => {
     setLoading(true);
@@ -467,6 +490,26 @@ export default function DynamicCatalog() {
 
             {/* Related Items Sections */}
             <div className="space-y-12">
+              {/* Sibling Subcategories - only shown when viewing a subcategory */}
+              {type === "subcategory" && siblingSubcategories.length > 0 && (
+                <section>
+                  <div className="flex items-center gap-3 mb-6">
+                    <Layers size={22} className="text-accent flex-shrink-0" />
+                    <h2 className="text-2xl sm:text-3xl font-bold text-primary">
+                      Subcategorías de{" "}
+                      <span className="text-accent">
+                        {catalogData?.mainItem?.category_name}
+                      </span>
+                    </h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {siblingSubcategories.map((sub) =>
+                      renderItemCard(sub, "subcategory"),
+                    )}
+                  </div>
+                </section>
+              )}
+
               {/* Categories - Show when no type selected OR when there are related categories */}
               {catalogData?.relatedCategories &&
                 catalogData.relatedCategories.length > 0 && (
@@ -594,6 +637,7 @@ export default function DynamicCatalog() {
 
           openNewWizard(prefill);
         }}
+        id="cotizar-ahora-btn"
         className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-6 py-4 bg-accent text-white font-bold text-base rounded-full hover:bg-orange-600 hover:shadow-2xl hover:shadow-accent/50 transition-all duration-300 active:scale-95 shadow-xl group"
       >
         <FileText

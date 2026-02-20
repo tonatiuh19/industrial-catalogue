@@ -187,6 +187,10 @@ export default function ReferenceDataWizard({
       base.manufacturer_id = (entity as Brand)?.manufacturer_id || "";
     }
 
+    if (config.hasCategory) {
+      base.category_id = (entity as any)?.category_id || "";
+    }
+
     return base;
   };
 
@@ -228,6 +232,12 @@ export default function ReferenceDataWizard({
         schema.manufacturer_id = Yup.number()
           .required("El fabricante es requerido")
           .positive("Selecciona un fabricante válido");
+      }
+
+      if (type === "subcategory") {
+        schema.category_id = Yup.number()
+          .required("La categoría padre es requerida")
+          .positive("Selecciona una categoría válida");
       }
 
       return Yup.object(schema);
@@ -668,6 +678,46 @@ export default function ReferenceDataWizard({
                         </div>
                       )}
 
+                      {/* Category Select (Subcategories) */}
+                      {config.hasCategory && type === "subcategory" && (
+                        <div className="space-y-2">
+                          <Label htmlFor="category">
+                            Categoría Padre{" "}
+                            <span className="text-red-500">*</span>
+                          </Label>
+                          <Select
+                            value={values.category_id?.toString() || ""}
+                            onValueChange={(value) =>
+                              setFieldValue("category_id", value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecciona una categoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {reference.categories.map((cat) => (
+                                <SelectItem
+                                  key={cat.id}
+                                  value={cat.id.toString()}
+                                >
+                                  {cat.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {errors.category_id && touched.category_id && (
+                            <p className="text-sm text-red-500">
+                              {errors.category_id}
+                            </p>
+                          )}
+                          {reference.categories.length === 0 && (
+                            <p className="text-xs text-amber-600">
+                              No hay categorías disponibles. Crea una primero.
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       {/* Manufacturer Select (Brands only) */}
                       {config.hasManufacturer && (
                         <div className="space-y-2">
@@ -806,6 +856,19 @@ export default function ReferenceDataWizard({
                                 {reference.manufacturers.find(
                                   (m) =>
                                     m.id === Number(values.manufacturer_id),
+                                )?.name || "-"}
+                              </div>
+                            </>
+                          )}
+
+                          {type === "subcategory" && (
+                            <>
+                              <div className="text-muted-foreground">
+                                Categoría Padre:
+                              </div>
+                              <div className="font-medium">
+                                {reference.categories.find(
+                                  (c) => c.id === Number(values.category_id),
                                 )?.name || "-"}
                               </div>
                             </>
