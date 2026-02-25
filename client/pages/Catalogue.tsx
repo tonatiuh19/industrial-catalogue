@@ -65,11 +65,6 @@ const Catalogue = () => {
     setIsInitialLoad(false);
   }, []);
 
-  // Debug: log products state
-  useEffect(() => {
-    console.log("Products state:", products);
-  }, [products]);
-
   // Refetch products when filters change (skip initial load)
   useEffect(() => {
     if (!isInitialLoad) {

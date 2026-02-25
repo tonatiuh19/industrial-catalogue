@@ -548,15 +548,6 @@ export default function Products() {
     model.name.toLowerCase().includes(search.toLowerCase()),
   );
 
-  // Debug log
-  console.log("Reference data:", {
-    categories: reference.categories?.length,
-    subcategories: reference.subcategories?.length,
-    manufacturers: reference.manufacturers?.length,
-    brands: reference.brands?.length,
-    models: reference.models?.length,
-  });
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

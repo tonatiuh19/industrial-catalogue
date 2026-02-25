@@ -90,13 +90,7 @@ export default function DynamicCatalog() {
         if (value) params[key] = parseInt(value);
       });
 
-      console.log("[DynamicCatalog] fetchCatalogData params:", params);
       const response = await catalogApi.getCatalogData(params);
-      console.log("[DynamicCatalog] API response data:", response.data?.data);
-      console.log(
-        "[DynamicCatalog] relatedBrands:",
-        response.data?.data?.relatedBrands,
-      );
       if (response.data.success) {
         setCatalogData(response.data.data);
       }

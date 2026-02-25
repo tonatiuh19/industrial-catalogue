@@ -36,7 +36,6 @@ export default function AdminHome() {
       // Load categories
       try {
         const response = await categoriesApi.getAll();
-        console.log("Categories API response:", response.data);
         const categories = Array.isArray(response.data.data)
           ? response.data.data
           : Array.isArray(response.data)

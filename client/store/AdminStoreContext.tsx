@@ -89,7 +89,6 @@ export const AdminStoreProvider: React.FC<{ children: React.ReactNode }> = ({
         payload: "Loading products...",
       });
       const response = await adminProductsApi.getAll({ page, limit });
-      console.log("Admin products API response:", response);
 
       // Handle API response structure: { success: true, data: [...products], pagination: {...} }
       const products = Array.isArray(response.data) ? response.data : [];
@@ -454,13 +453,11 @@ export const AdminStoreProvider: React.FC<{ children: React.ReactNode }> = ({
       const response = await subcategoriesApi.getAll({
         include_inactive: true,
       });
-      console.log("Subcategories API response:", response);
       const subcategories = Array.isArray(response.data.data)
         ? response.data.data
         : Array.isArray(response.data)
           ? response.data
           : [];
-      console.log("Extracted subcategories:", subcategories);
       dispatch({ type: "ADMIN_SUBCATEGORIES_SUCCESS", payload: subcategories });
     } catch (error: any) {
       console.error("Subcategories fetch error:", error);

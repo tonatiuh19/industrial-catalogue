@@ -73,7 +73,6 @@ const QuoteWizard = () => {
       contactInfo: formData,
       submittedAt: new Date().toISOString(),
     };
-    console.log("Quote submitted:", quoteData);
     clearProducts();
     closeWizard();
   };

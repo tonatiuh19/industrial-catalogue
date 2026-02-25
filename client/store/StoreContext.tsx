@@ -63,8 +63,6 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({
         ...state.products.filters,
       });
 
-      console.log("Products API Response:", response.data);
-
       dispatch({
         type: ActionType.FETCH_PRODUCTS_SUCCESS,
         payload: {

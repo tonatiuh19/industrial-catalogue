@@ -71,11 +71,6 @@ export default function Home() {
   const { isNewWizardOpen, openNewWizard, closeNewWizard, prefillData } =
     useQuote();
 
-  // Debug logging for wizard state
-  useEffect(() => {
-    console.log("Wizard state changed:", { isNewWizardOpen, prefillData });
-  }, [isNewWizardOpen, prefillData]);
-
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
@@ -163,16 +158,6 @@ export default function Home() {
       const response = await homeSectionsApi.getRandomSections(3, [
         "manufacturer",
       ]);
-      console.log("[Home] fetchSections raw response:", response.data);
-      console.log(
-        "[Home] sections returned:",
-        response.data?.data?.map((s: any) => ({
-          id: s.id,
-          name: s.name,
-          type: s.type,
-          itemCount: s.items?.length,
-        })),
-      );
       if (response.data.success) {
         setSections(response.data.data);
       }
@@ -221,7 +206,6 @@ export default function Home() {
     product_type?: string;
     description?: string;
   }) => {
-    console.log("Opening wizard with complete prefill data:", data);
     openNewWizard(data);
   };
 
@@ -748,7 +732,6 @@ export default function Home() {
       {showFloatingButton && (
         <button
           onClick={() => {
-            console.log("Floating button clicked, opening wizard...");
             openNewWizard();
           }}
           className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 bg-accent text-white font-bold text-sm sm:text-base rounded-full hover:bg-orange-600 hover:shadow-2xl hover:shadow-accent/50 transition-all duration-300 active:scale-95 shadow-xl group"

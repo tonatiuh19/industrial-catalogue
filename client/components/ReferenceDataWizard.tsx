@@ -268,20 +268,9 @@ export default function ReferenceDataWizard({
     values: FormValues,
     { setSubmitting }: FormikHelpers<FormValues>,
   ) => {
-    console.log(`[ReferenceDataWizard] handleSubmit called for type: ${type}`);
-    console.log(`[ReferenceDataWizard] isEditMode: ${isEditMode}`);
-    console.log(
-      `[ReferenceDataWizard] Form values:`,
-      JSON.stringify(values, null, 2),
-    );
-    console.log(`[ReferenceDataWizard] Entity:`, entity);
-
     try {
       // Validate main image
       if (!mainImage && !mainImageFile) {
-        console.log(
-          `[ReferenceDataWizard] Missing main image validation failed`,
-        );
         toast({
           title: "Error",
           description: "La imagen principal es requerida",
@@ -391,19 +380,9 @@ export default function ReferenceDataWizard({
           finalExtraImages.length > 0 ? JSON.stringify(finalExtraImages) : null,
       };
 
-      console.log(
-        `[ReferenceDataWizard] Prepared entityData:`,
-        JSON.stringify(entityData, null, 2),
-      );
-      console.log(`[ReferenceDataWizard] Config API:`, config.api);
-
       // Convert manufacturer_id to number for brands
       if (config.hasManufacturer && entityData.manufacturer_id) {
         entityData.manufacturer_id = Number(entityData.manufacturer_id);
-        console.log(
-          `[ReferenceDataWizard] Converted manufacturer_id to:`,
-          entityData.manufacturer_id,
-        );
       }
 
       // Attach multi-category ids for brands
@@ -411,41 +390,21 @@ export default function ReferenceDataWizard({
         entityData.category_ids = selectedCategoryIds;
         // Remove legacy single category_id from payload (let API derive it from category_ids)
         delete entityData.category_id;
-        console.log(
-          `[ReferenceDataWizard] Brand category_ids:`,
-          entityData.category_ids,
-        );
       }
 
       // Convert category_id to number for subcategories
       if (config.hasCategory && entityData.category_id) {
         entityData.category_id = Number(entityData.category_id);
-        console.log(
-          `[ReferenceDataWizard] Converted category_id to:`,
-          entityData.category_id,
-        );
       }
 
-      console.log(
-        `[ReferenceDataWizard] Final entityData before API call:`,
-        JSON.stringify(entityData, null, 2),
-      );
-
       if (isEditMode && entity) {
-        console.log(
-          `[ReferenceDataWizard] Calling update API for ID:`,
-          entity.id,
-        );
         const updateResult = await config.api.update(entity.id, entityData);
-        console.log(`[ReferenceDataWizard] Update API result:`, updateResult);
         toast({
           title: "Éxito",
           description: `${config.title} actualizado exitosamente`,
         });
       } else {
-        console.log(`[ReferenceDataWizard] Calling create API`);
         const createResult = await config.api.create(entityData);
-        console.log(`[ReferenceDataWizard] Create API result:`, createResult);
         toast({
           title: "Éxito",
           description: `${config.title} creado exitosamente`,
