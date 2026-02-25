@@ -41,8 +41,9 @@ export const brandValidationSchema = Yup.object({
     .min(2, "Name must be at least 2 characters")
     .max(100, "Name must not exceed 100 characters"),
   manufacturer_id: Yup.number()
-    .required("Manufacturer is required")
-    .positive("Please select a manufacturer"),
+    .nullable()
+    .positive("Please select a manufacturer")
+    .optional(),
   description: Yup.string().max(
     500,
     "Description must not exceed 500 characters",

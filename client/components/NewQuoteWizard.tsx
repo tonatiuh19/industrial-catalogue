@@ -125,9 +125,10 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
   // Filter subcategories based on selected category
   useEffect(() => {
     if (formData.category_id) {
-      setFilteredSubcategories(
-        subcategories.filter((sub) => sub.category_id === formData.category_id),
+      const filtered = subcategories.filter(
+        (sub) => sub.category_id === formData.category_id,
       );
+      setFilteredSubcategories(filtered);
     } else {
       setFilteredSubcategories(subcategories);
     }
@@ -147,7 +148,9 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
 
       if (brandsData.success) setBrands(brandsData.data);
       if (categoriesData.success) setCategories(categoriesData.data);
-      if (subcategoriesData.success) setSubcategories(subcategoriesData.data);
+      if (subcategoriesData.success) {
+        setSubcategories(subcategoriesData.data);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -902,6 +905,35 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
                   </div>
                 )}
 
+                {formData.category_id && (
+                  <div>
+                    <p className="text-xs text-steel-500 font-semibold mb-1">
+                      Categoría
+                    </p>
+                    <p className="text-sm text-steel-700 font-semibold">
+                      {
+                        categories.find((c) => c.id === formData.category_id)
+                          ?.name
+                      }
+                    </p>
+                  </div>
+                )}
+
+                {formData.subcategory_id && (
+                  <div>
+                    <p className="text-xs text-steel-500 font-semibold mb-1">
+                      Subcategoría
+                    </p>
+                    <p className="text-sm text-steel-700 font-semibold">
+                      {
+                        subcategories.find(
+                          (s) => s.id === formData.subcategory_id,
+                        )?.name
+                      }
+                    </p>
+                  </div>
+                )}
+
                 {formData.product_type && (
                   <div>
                     <p className="text-xs text-steel-500 font-semibold mb-1">
@@ -935,11 +967,14 @@ const QuoteWizard = ({ isOpen, onClose, prefillData }: QuoteWizardProps) => {
                   </div>
                 )}
 
-                {!formData.product_type && (
-                  <p className="text-sm text-steel-400 italic py-2">
-                    Completa el formulario para ver el resumen
-                  </p>
-                )}
+                {!formData.product_type &&
+                  !formData.brand &&
+                  !formData.category_id &&
+                  !formData.subcategory_id && (
+                    <p className="text-sm text-steel-400 italic py-2">
+                      Completa el formulario para ver el resumen
+                    </p>
+                  )}
               </div>
 
               {/* Contact Info Summary */}

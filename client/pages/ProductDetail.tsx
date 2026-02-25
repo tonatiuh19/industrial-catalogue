@@ -173,8 +173,7 @@ const ProductDetail = () => {
       <SEO
         title={product.name}
         description={
-          product.description ||
-          `${product.name} - ${product.manufacturer_name || ""} ${product.brand_name || ""}`
+          product.description || `${product.name} - ${product.brand_name || ""}`
         }
         image={
           product.main_image ||
@@ -344,16 +343,6 @@ const ProductDetail = () => {
 
             {/* Product Metadata */}
             <div className="grid gap-4 sm:grid-cols-2">
-              {product.manufacturer_name && (
-                <div className="rounded-lg bg-white p-4 shadow-sm">
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    Fabricante
-                  </p>
-                  <p className="font-bold text-gray-900">
-                    {product.manufacturer_name}
-                  </p>
-                </div>
-              )}
               {product.brand_name && (
                 <div className="rounded-lg bg-white p-4 shadow-sm">
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">

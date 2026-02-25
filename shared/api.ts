@@ -72,6 +72,9 @@ export interface Brand {
   manufacturer_name?: string;
   category_name?: string;
   subcategory_name?: string;
+  // Many-to-many categories
+  category_ids?: number[];
+  category_names?: string[];
 }
 
 export interface Model {

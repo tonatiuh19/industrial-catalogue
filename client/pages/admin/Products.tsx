@@ -598,7 +598,7 @@ export default function Products() {
             className="flex items-center gap-2"
           >
             <Factory className="h-4 w-4" />
-            <span className="hidden sm:inline">Fabricantes</span>
+            <span className="hidden sm:inline">Fabricantes (Opcional)</span>
           </TabsTrigger>
           <TabsTrigger value="brands" className="flex items-center gap-2">
             <Layers className="h-4 w-4" />
@@ -1261,7 +1261,10 @@ export default function Products() {
                             </TableCell>
                             <TableCell>{manufacturer?.name || "-"}</TableCell>
                             <TableCell className="text-sm">
-                              {brand.category_name || "-"}
+                              {brand.category_names &&
+                              brand.category_names.length > 0
+                                ? brand.category_names.join(", ")
+                                : brand.category_name || "-"}
                             </TableCell>
                             <TableCell className="text-sm">
                               {brand.subcategory_name || "-"}

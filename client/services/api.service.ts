@@ -118,7 +118,6 @@ export const subcategoriesApi = {
     return httpClient
       .post("/admin/subcategories", data)
       .then((response) => {
-        console.log("[subcategoriesApi] create response:", response);
         return response;
       })
       .catch((error) => {
@@ -203,7 +202,8 @@ export const brandsApi = {
   },
   create: (data: {
     name: string;
-    manufacturer_id: number;
+    manufacturer_id?: number | null;
+    category_ids?: number[];
     description?: string;
   }) => {
     return httpClient.post("/admin/brands", data);
@@ -212,7 +212,8 @@ export const brandsApi = {
     id: number,
     data: {
       name: string;
-      manufacturer_id: number;
+      manufacturer_id?: number | null;
+      category_ids?: number[];
       description?: string;
       is_active?: boolean;
     },
@@ -290,8 +291,14 @@ export const quotesApi = {
 
 // Home Sections API
 export const homeSectionsApi = {
-  getRandomSections: (count: number = 3) => {
-    return httpClient.get<ApiResponse<any[]>>(`/home/sections?count=${count}`);
+  getRandomSections: (count: number = 3, excludeTypes?: string[]) => {
+    const params = new URLSearchParams({ count: count.toString() });
+    if (excludeTypes && excludeTypes.length > 0) {
+      params.set("exclude_types", excludeTypes.join(","));
+    }
+    return httpClient.get<ApiResponse<any[]>>(
+      `/home/sections?${params.toString()}`,
+    );
   },
 };
 

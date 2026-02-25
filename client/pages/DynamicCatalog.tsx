@@ -90,7 +90,13 @@ export default function DynamicCatalog() {
         if (value) params[key] = parseInt(value);
       });
 
+      console.log("[DynamicCatalog] fetchCatalogData params:", params);
       const response = await catalogApi.getCatalogData(params);
+      console.log("[DynamicCatalog] API response data:", response.data?.data);
+      console.log(
+        "[DynamicCatalog] relatedBrands:",
+        response.data?.data?.relatedBrands,
+      );
       if (response.data.success) {
         setCatalogData(response.data.data);
       }
@@ -169,12 +175,12 @@ export default function DynamicCatalog() {
         className="group bg-white rounded-xl border-2 border-steel-200 hover:border-accent hover:shadow-xl transition-all duration-300 overflow-hidden"
       >
         <Link to={`/catalog?type=${linkType}&id=${linkId}`}>
-          <div className="aspect-video bg-gradient-to-br from-steel-100 to-steel-200 overflow-hidden">
+          <div className="aspect-video bg-white overflow-hidden">
             {item.main_image ? (
               <img
                 src={getImageUrl(item.main_image)}
                 alt={item.name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -209,12 +215,6 @@ export default function DynamicCatalog() {
                 {item.subcategory_name}
               </p>
             )}
-            {item.manufacturer_name && (
-              <p className="flex items-center gap-1.5">
-                <Factory size={14} className="text-steel-400" />
-                {item.manufacturer_name}
-              </p>
-            )}
           </div>
 
           {item.description && (
@@ -246,6 +246,7 @@ export default function DynamicCatalog() {
                 }
                 if (itemType === "subcategory") {
                   prefill.subcategory_id = item.id;
+                  if (item.category_id) prefill.category_id = item.category_id;
                 }
                 openNewWizard(prefill);
               }}
@@ -312,12 +313,12 @@ export default function DynamicCatalog() {
               <div className="mb-12 bg-white rounded-2xl border-2 border-steel-200 overflow-hidden">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Image */}
-                  <div className="aspect-video lg:aspect-square bg-gradient-to-br from-steel-100 to-steel-200">
+                  <div className="aspect-video lg:aspect-square bg-white overflow-hidden group">
                     {catalogData.mainItem.main_image ? (
                       <img
                         src={getImageUrl(catalogData.mainItem.main_image)}
                         alt={catalogData.mainItem.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -349,12 +350,6 @@ export default function DynamicCatalog() {
                           {catalogData.mainItem.subcategory_name}
                         </p>
                       )}
-                      {catalogData.mainItem.manufacturer_name && (
-                        <p className="text-steel-700">
-                          <strong>Fabricante:</strong>{" "}
-                          {catalogData.mainItem.manufacturer_name}
-                        </p>
-                      )}
                     </div>
 
                     {catalogData.mainItem.description && (
@@ -376,8 +371,7 @@ export default function DynamicCatalog() {
                 </h2>
                 {(selectedFilters.category_id ||
                   selectedFilters.subcategory_id ||
-                  selectedFilters.brand_id ||
-                  selectedFilters.manufacturer_id) && (
+                  selectedFilters.brand_id) && (
                   <Button variant="ghost" size="sm" onClick={clearFilters}>
                     Limpiar filtros
                   </Button>
@@ -429,31 +423,6 @@ export default function DynamicCatalog() {
                         {catalogData.relatedSubcategories.map((sub) => (
                           <SelectItem key={sub.id} value={sub.id.toString()}>
                             {sub.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-
-                {/* Manufacturer Filter */}
-                {catalogData?.relatedManufacturers &&
-                  catalogData.relatedManufacturers.length > 0 && (
-                    <Select
-                      value={selectedFilters.manufacturer_id}
-                      onValueChange={(value) =>
-                        handleFilterChange("manufacturer_id", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Fabricante" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">
-                          Todos los fabricantes
-                        </SelectItem>
-                        {catalogData.relatedManufacturers.map((mfg) => (
-                          <SelectItem key={mfg.id} value={mfg.id.toString()}>
-                            {mfg.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -542,21 +511,6 @@ export default function DynamicCatalog() {
                   </section>
                 )}
 
-              {/* Manufacturers */}
-              {catalogData?.relatedManufacturers &&
-                catalogData.relatedManufacturers.length > 0 && (
-                  <section>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-primary mb-6">
-                      Fabricantes
-                    </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {catalogData.relatedManufacturers.map((mfg) =>
-                        renderItemCard(mfg, "manufacturer"),
-                      )}
-                    </div>
-                  </section>
-                )}
-
               {/* Brands */}
               {catalogData?.relatedBrands &&
                 catalogData.relatedBrands.length > 0 && (
@@ -575,7 +529,6 @@ export default function DynamicCatalog() {
               {/* Empty State */}
               {!catalogData?.relatedCategories?.length &&
                 !catalogData?.relatedSubcategories?.length &&
-                !catalogData?.relatedManufacturers?.length &&
                 !catalogData?.relatedBrands?.length && (
                   <div className="text-center py-20">
                     <p className="text-steel-600 text-lg mb-4">
@@ -601,7 +554,7 @@ export default function DynamicCatalog() {
           const prefill: any = {};
 
           // Get brand info from main item or filters
-          if (catalogData?.mainItem?.type === "brand") {
+          if (type === "brand" && catalogData?.mainItem) {
             prefill.brand = catalogData.mainItem.name;
             prefill.brand_id = catalogData.mainItem.id;
           } else if (selectedFilters.brand_id) {
@@ -615,22 +568,25 @@ export default function DynamicCatalog() {
           }
 
           // Get manufacturer info
-          if (catalogData?.mainItem?.type === "manufacturer") {
+          if (type === "manufacturer" && catalogData?.mainItem) {
             prefill.manufacturer_id = catalogData.mainItem.id;
           } else if (selectedFilters.manufacturer_id) {
             prefill.manufacturer_id = parseInt(selectedFilters.manufacturer_id);
           }
 
           // Get category info
-          if (catalogData?.mainItem?.type === "category") {
+          if (type === "category" && catalogData?.mainItem) {
             prefill.category_id = catalogData.mainItem.id;
           } else if (selectedFilters.category_id) {
             prefill.category_id = parseInt(selectedFilters.category_id);
           }
 
           // Get subcategory info
-          if (catalogData?.mainItem?.type === "subcategory") {
+          if (type === "subcategory" && catalogData?.mainItem) {
             prefill.subcategory_id = catalogData.mainItem.id;
+            if (catalogData.mainItem.category_id) {
+              prefill.category_id = catalogData.mainItem.category_id;
+            }
           } else if (selectedFilters.subcategory_id) {
             prefill.subcategory_id = parseInt(selectedFilters.subcategory_id);
           }

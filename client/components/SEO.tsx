@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet-async";
 interface SEOProps {
   title?: string;
   description?: string;
+  keywords?: string;
   image?: string;
   url?: string;
   type?: "website" | "article" | "product";
@@ -11,11 +12,14 @@ interface SEOProps {
   availability?: "in stock" | "out of stock";
   sku?: string;
   noindex?: boolean;
+  geoRegion?: string;
+  geoPlacename?: string;
 }
 
 const SEO = ({
   title = "Trenor - Catálogo de Productos Industriales",
   description = "Encuentra herramientas y equipamiento industrial de calidad. Innovación y durabilidad en cada producto.",
+  keywords,
   image = "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=1200",
   url = window.location.href,
   type = "website",
@@ -24,6 +28,8 @@ const SEO = ({
   availability = "in stock",
   sku,
   noindex = false,
+  geoRegion,
+  geoPlacename,
 }: SEOProps) => {
   const siteName = "Trenor";
   const fullTitle = title.includes(siteName) ? title : `${title} | ${siteName}`;
@@ -33,6 +39,7 @@ const SEO = ({
       {/* Basic Meta Tags */}
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
+      {keywords && <meta name="keywords" content={keywords} />}
       <link rel="canonical" href={url} />
 
       {/* Open Graph / Facebook */}
@@ -77,6 +84,8 @@ const SEO = ({
       />
       <meta name="language" content="Spanish" />
       <meta name="author" content="Trenor" />
+      {geoRegion && <meta name="geo.region" content={geoRegion} />}
+      {geoPlacename && <meta name="geo.placename" content={geoPlacename} />}
     </Helmet>
   );
 };

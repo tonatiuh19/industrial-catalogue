@@ -1,4 +1,6 @@
 // Admin-specific state types
+import type { QuoteItem } from "@shared/api";
+
 export interface AdminProduct {
   id: number;
   name: string;
@@ -22,21 +24,41 @@ export interface AdminProduct {
 
 export interface AdminQuote {
   id: number;
-  product_id: number;
-  product_name?: string;
-  product_model?: string;
-  category_name?: string;
-  brand_name?: string;
+  quote_number: string;
   customer_name: string;
   customer_email: string;
-  customer_phone: string;
-  customer_company?: string;
+  customer_phone: string | null;
+  customer_company: string | null;
+  customer_message: string | null;
+  // New fields for simplified quote system
+  brand: string | null;
+  product_type: string | null;
+  part_number: string | null;
+  specifications: string | null;
   quantity: number;
-  message?: string;
-  status: "pending" | "contacted" | "quoted" | "closed";
-  admin_notes?: string;
+  city_state: string | null;
+  preferred_contact_method: "email" | "phone" | "whatsapp";
+  brand_id: number | null;
+  manufacturer_id: number | null;
+  category_id: number | null;
+  subcategory_id: number | null;
+  status:
+    | "pending"
+    | "processing"
+    | "sent"
+    | "accepted"
+    | "rejected"
+    | "expired";
+  total_items: number;
+  notes: string | null;
   created_at: string;
   updated_at: string;
+  // Joined fields
+  items?: QuoteItem[];
+  brand_name?: string;
+  manufacturer_name?: string;
+  category_name?: string;
+  subcategory_name?: string;
 }
 
 export interface AdminUser {
@@ -123,6 +145,8 @@ export interface Brand {
   manufacturer_name?: string;
   category_name?: string;
   subcategory_name?: string;
+  category_ids?: number[];
+  category_names?: string[];
 }
 
 export interface Model {

@@ -386,12 +386,7 @@ const Catalogue = () => {
                               <span>{product.category_name}</span>
                             </p>
                           )}
-                          {product.manufacturer_name && (
-                            <p className="flex items-center gap-2">
-                              <span className="font-semibold">Fabricante:</span>
-                              <span>{product.manufacturer_name}</span>
-                            </p>
-                          )}
+
                           {product.brand_name && (
                             <p className="flex items-center gap-2">
                               <span className="font-semibold">Marca:</span>

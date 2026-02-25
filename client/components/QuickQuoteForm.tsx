@@ -170,7 +170,7 @@ export default function QuickQuoteForm({
                     <div className="relative">
                       <select
                         name="category"
-                        className="w-full appearance-none bg-white/95 border-2 border-white/30 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 text-sm sm:text-base text-gray-800 font-medium focus:border-white focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200 cursor-pointer hover:bg-white shadow-lg"
+                        className="w-full appearance-none bg-white/95 border-2 border-white/30 rounded-lg sm:rounded-xl px-3 sm:px-4 pr-10 sm:pr-12 py-2.5 sm:py-3 lg:py-4 text-sm sm:text-base text-gray-800 font-medium focus:border-white focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200 cursor-pointer hover:bg-white shadow-lg"
                       >
                         <option value="" className="text-gray-500">
                           Selecciona categoría
@@ -185,18 +185,16 @@ export default function QuickQuoteForm({
                           </option>
                         ))}
                       </select>
-                      <div className="absolute inset-y-0 right-0 flex items-center px-3 sm:px-4 pointer-events-none">
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 sm:pr-4 pointer-events-none">
                         <svg
-                          className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500"
-                          fill="none"
-                          stroke="currentColor"
+                          className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"
+                          fill="currentColor"
                           viewBox="0 0 24 24"
                         >
                           <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
+                            fillRule="evenodd"
+                            d="M5.23 7.21a.75.75 0 011.06.02L12 13.06l5.71-5.83a.75.75 0 111.08 1.04l-6.25 6.37a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                            clipRule="evenodd"
                           />
                         </svg>
                       </div>

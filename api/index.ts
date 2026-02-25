@@ -149,19 +149,38 @@ const getBrands: RequestHandler = async (req, res) => {
 
     const brands = await query<any[]>(
       `SELECT b.*, 
-              c.name as category_name,
-              s.name as subcategory_name
+              m.name as manufacturer_name,
+              s.name as subcategory_name,
+              GROUP_CONCAT(DISTINCT bc.category_id ORDER BY bc.category_id SEPARATOR ',') as category_ids_str,
+              GROUP_CONCAT(DISTINCT cat.name ORDER BY bc.category_id SEPARATOR '|||') as category_names_str
        FROM brands b
-       LEFT JOIN categories c ON b.category_id = c.id
+       LEFT JOIN manufacturers m ON b.manufacturer_id = m.id
        LEFT JOIN subcategories s ON b.subcategory_id = s.id
+       LEFT JOIN brand_categories bc ON b.id = bc.brand_id
+       LEFT JOIN categories cat ON bc.category_id = cat.id
        ${whereClause}
+       GROUP BY b.id
        ORDER BY b.name ASC`,
       params,
     );
 
+    // Parse category_ids_str / category_names_str into arrays
+    const brandsWithCategoryArrays = (brands as any[]).map((brand) => {
+      const category_ids = brand.category_ids_str
+        ? brand.category_ids_str.split(",").map(Number)
+        : [];
+      const category_names = brand.category_names_str
+        ? brand.category_names_str.split("|||")
+        : [];
+      // Derive category_name from first category for backward compat
+      const category_name = category_names[0] || null;
+      const { category_ids_str, category_names_str, ...rest } = brand;
+      return { ...rest, category_ids, category_names, category_name };
+    });
+
     return res.status(200).json({
       success: true,
-      data: brands,
+      data: brandsWithCategoryArrays,
     });
   } catch (error) {
     console.error("Get brands error:", error);
@@ -514,7 +533,21 @@ const getEmailTemplate = async (
       [templateKey],
     );
 
-    if (templates.length === 0) return null;
+    if (templates.length === 0) {
+      // Create quote_status_update template if it doesn't exist
+      if (templateKey === "quote_status_update") {
+        await createQuoteStatusUpdateTemplate();
+        // Try again after creating the template
+        const newTemplates = await query<EmailTemplate[]>(
+          "SELECT * FROM email_templates WHERE template_key = ? AND is_active = 1",
+          [templateKey],
+        );
+        if (newTemplates.length > 0) {
+          return newTemplates[0];
+        }
+      }
+      return null;
+    }
 
     const template = templates[0];
     if (template.variables && typeof template.variables === "string") {
@@ -529,6 +562,197 @@ const getEmailTemplate = async (
   } catch (error) {
     console.error("Error getting email template:", error);
     return null;
+  }
+};
+
+// Create quote status update email template
+const createQuoteStatusUpdateTemplate = async (): Promise<void> => {
+  try {
+    const htmlContent = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Actualización de Cotización</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      line-height: 1.6; 
+      color: #333; 
+      background-color: #f4f4f4; 
+      margin: 0; 
+      padding: 0; 
+    }
+    .container { 
+      max-width: 600px; 
+      margin: 0 auto; 
+      background-color: #ffffff; 
+    }
+    .header { 
+      background: linear-gradient(135deg, #2c5aa0 0%, #1a365d 100%); 
+      color: white; 
+      padding: 30px; 
+      text-align: center; 
+    }
+    .header img { 
+      max-height: 50px; 
+      margin-bottom: 15px; 
+    }
+    .content { 
+      padding: 30px; 
+    }
+    .status-update { 
+      background-color: #e8f4fd; 
+      border: 2px solid #2c5aa0; 
+      border-radius: 8px; 
+      padding: 20px; 
+      margin: 20px 0; 
+      text-align: center;
+    }
+    .status-badge { 
+      display: inline-block; 
+      padding: 8px 16px; 
+      border-radius: 20px; 
+      font-weight: bold; 
+      text-transform: uppercase; 
+      margin: 5px;
+    }
+    .status-pending { background-color: #fff3cd; color: #856404; }
+    .status-processing { background-color: #d1ecf1; color: #0c5460; }
+    .status-sent { background-color: #d1ecf1; color: #0c5460; }
+    .status-accepted { background-color: #d4edda; color: #155724; }
+    .status-rejected { background-color: #f8d7da; color: #721c24; }
+    .status-expired { background-color: #e2e3e5; color: #383d41; }
+    .quote-details { 
+      background-color: #f8f9fa; 
+      border: 1px solid #e9ecef; 
+      border-radius: 8px; 
+      padding: 20px; 
+      margin: 20px 0; 
+    }
+    .footer { 
+      background-color: #2c5aa0; 
+      color: white; 
+      padding: 20px; 
+      text-align: center; 
+      font-size: 14px; 
+    }
+    .notes-box {
+      background-color: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="{{company_logo}}" alt="{{company_name}}">
+      <h1>Actualización de tu Cotización</h1>
+      <p>Estado actualizado para {{quote_number}}</p>
+    </div>
+    
+    <div class="content">
+      <h2>Hola {{customer_name}},</h2>
+      <p>Te informamos que el estado de tu cotización ha sido actualizado.</p>
+      
+      <div class="status-update">
+        <h3>🔄 Cambio de Estado</h3>
+        <p>Estado anterior: <span class="status-badge status-{{old_status}}">{{old_status}}</span></p>
+        <p>Estado actual: <span class="status-badge status-{{new_status}}">{{new_status}}</span></p>
+        <p><strong>{{status_message}}</strong></p>
+      </div>
+
+      <div class="quote-details">
+        <h3>📋 Detalles de tu Cotización</h3>
+        <p><strong>Número de Cotización:</strong> {{quote_number}}</p>
+        <p><strong>Fecha de actualización:</strong> {{date}}</p>
+        {{#if brand}}<p><strong>Marca solicitada:</strong> {{brand}}</p>{{/if}}
+        {{#if product_type}}<p><strong>Tipo de producto:</strong> {{product_type}}</p>{{/if}}
+        {{#if part_number}}<p><strong>Número de parte:</strong> {{part_number}}</p>{{/if}}
+      </div>
+
+      {{#if admin_notes}}
+      <div class="notes-box">
+        <h4>💬 Notas del Equipo</h4>
+        <p>{{admin_notes}}</p>
+      </div>
+      {{/if}}
+
+      <p>Si tienes alguna pregunta sobre esta actualización, no dudes en contactarnos.</p>
+    
+    </div>
+    
+    <div class="footer">
+      <p>&copy; 2026 {{company_name}}. Todos los derechos reservados.</p>
+      <p>Sistema automatizado de gestión de cotizaciones</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const textContent = `Actualización de Cotización - {{quote_number}}
+
+Hola {{customer_name}},
+
+Te informamos que el estado de tu cotización ha sido actualizado:
+
+Estado anterior: {{old_status}}
+Estado actual: {{new_status}}
+
+{{status_message}}
+
+Detalles de tu cotización:
+- Número: {{quote_number}}
+- Fecha de actualización: {{date}}
+{{#if brand}}- Marca: {{brand}}{{/if}}
+{{#if product_type}}- Tipo de producto: {{product_type}}{{/if}}
+{{#if part_number}}- Número de parte: {{part_number}}{{/if}}
+
+{{#if admin_notes}}
+Notas del equipo: {{admin_notes}}
+{{/if}}
+
+Si tienes alguna pregunta, no dudes en contactarnos.
+
+Visita: {{company_website}}
+
+Saludos,
+Equipo {{company_name}}`;
+
+    await query(
+      `INSERT INTO email_templates (template_key, name, subject, html_content, text_content, variables, is_active) 
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        "quote_status_update",
+        "Quote Status Update Notification",
+        "Actualización de Cotización {{quote_number}} - {{new_status}}",
+        htmlContent,
+        textContent,
+        JSON.stringify([
+          "quote_number",
+          "customer_name",
+          "old_status",
+          "new_status",
+          "status_message",
+          "brand",
+          "product_type",
+          "part_number",
+          "admin_notes",
+          "date",
+          "company_name",
+          "company_logo",
+          "company_website",
+        ]),
+        1,
+      ],
+    );
+
+    console.log("Quote status update email template created successfully");
+  } catch (error) {
+    console.error("Error creating quote status update template:", error);
   }
 };
 
@@ -2474,12 +2698,13 @@ const createBrand: RequestHandler = async (req, res) => {
       extra_images,
       category_id,
       subcategory_id,
+      category_ids,
     } = req.body;
 
-    if (!name || !manufacturer_id) {
+    if (!name) {
       return res.status(400).json({
         success: false,
-        message: "Name and manufacturer_id are required",
+        message: "Name is required",
       });
     }
 
@@ -2488,7 +2713,7 @@ const createBrand: RequestHandler = async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       [
         name,
-        manufacturer_id,
+        manufacturer_id || null,
         description || null,
         logo_url || null,
         main_image || null,
@@ -2499,6 +2724,26 @@ const createBrand: RequestHandler = async (req, res) => {
     );
 
     const insertId = (result as any).insertId;
+
+    // Insert brand_categories rows for many-to-many
+    if (Array.isArray(category_ids) && category_ids.length > 0) {
+      const validIds = category_ids.filter(
+        (id: any) => typeof id === "number" && id > 0,
+      );
+      for (const catId of validIds) {
+        await pool.execute(
+          `INSERT IGNORE INTO brand_categories (brand_id, category_id) VALUES (?, ?)`,
+          [insertId, catId],
+        );
+      }
+      // Also keep legacy category_id in sync with first selected category
+      if (validIds.length > 0) {
+        await pool.execute(`UPDATE brands SET category_id = ? WHERE id = ?`, [
+          validIds[0],
+          insertId,
+        ]);
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -2534,6 +2779,7 @@ const updateBrand: RequestHandler = async (req, res) => {
       category_id,
       subcategory_id,
       is_active,
+      category_ids,
     } = req.body;
 
     const updates: string[] = [];
@@ -2574,6 +2820,29 @@ const updateBrand: RequestHandler = async (req, res) => {
     if (is_active !== undefined) {
       updates.push("is_active = ?");
       values.push(is_active ? 1 : 0);
+    }
+
+    // Handle many-to-many category_ids — sync brand_categories and legacy category_id
+    if (Array.isArray(category_ids)) {
+      const validIds = category_ids.filter(
+        (cid: any) => typeof cid === "number" && cid > 0,
+      );
+
+      // Replace all entries for this brand
+      await pool.execute(`DELETE FROM brand_categories WHERE brand_id = ?`, [
+        parseInt(id),
+      ]);
+      for (const catId of validIds) {
+        await pool.execute(
+          `INSERT IGNORE INTO brand_categories (brand_id, category_id) VALUES (?, ?)`,
+          [parseInt(id), catId],
+        );
+      }
+
+      // Keep legacy category_id in sync with first selected category
+      const legacyCatId = validIds.length > 0 ? validIds[0] : null;
+      updates.push("category_id = ?");
+      values.push(legacyCatId);
     }
 
     if (updates.length === 0) {
@@ -3700,7 +3969,7 @@ const getAdminQuotes: RequestHandler = async (req, res) => {
 const updateQuoteStatus: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, admin_notes } = req.body;
 
     if (!status) {
       return res.status(400).json({
@@ -3709,9 +3978,35 @@ const updateQuoteStatus: RequestHandler = async (req, res) => {
       });
     }
 
+    // First, get the current quote to check if it exists and get customer info
+    const quotes = await query<any[]>(`SELECT * FROM quotes WHERE id = ?`, [
+      parseInt(id),
+    ]);
+
+    if (quotes.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Quote not found",
+      });
+    }
+
+    const quote = quotes[0];
+    const oldStatus = quote.status;
+
+    // Build update query dynamically based on provided fields
+    let updateFields = ["status = ?"];
+    let updateValues = [status];
+
+    if (admin_notes !== undefined) {
+      updateFields.push("notes = ?");
+      updateValues.push(admin_notes);
+    }
+
+    updateValues.push(parseInt(id));
+
     const [result] = await pool.execute(
-      `UPDATE quotes SET status = ? WHERE id = ?`,
-      [status, parseInt(id)],
+      `UPDATE quotes SET ${updateFields.join(", ")}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      updateValues,
     );
 
     if ((result as any).affectedRows === 0) {
@@ -3721,7 +4016,74 @@ const updateQuoteStatus: RequestHandler = async (req, res) => {
       });
     }
 
-    res.json({ success: true, message: "Quote status updated successfully" });
+    // Send email notification to customer if status changed
+    if (oldStatus !== status) {
+      try {
+        const statusMessages = {
+          pending:
+            "Tu solicitud ha sido recibida y está en proceso de revisión",
+          processing: "Estamos trabajando en tu cotización",
+          sent: "Tu cotización ha sido enviada y está lista para revisión",
+          accepted: "¡Felicitaciones! Tu cotización ha sido aprobada",
+          rejected:
+            "Lamentablemente no pudimos procesar tu solicitud en este momento",
+          expired:
+            "Tu cotización ha expirado. Contacta con nosotros si aún estás interesado",
+        };
+
+        const statusTranslations = {
+          pending: "Pendiente",
+          processing: "En Proceso",
+          sent: "Enviada",
+          accepted: "Aceptada",
+          rejected: "Rechazada",
+          expired: "Expirada",
+        };
+
+        await sendTemplateEmail("quote_status_update", quote.customer_email, {
+          quote_number: quote.quote_number,
+          customer_name: quote.customer_name,
+          old_status:
+            statusTranslations[oldStatus as keyof typeof statusTranslations] ||
+            oldStatus,
+          new_status:
+            statusTranslations[status as keyof typeof statusTranslations] ||
+            status,
+          status_message:
+            statusMessages[status as keyof typeof statusMessages] ||
+            "Tu cotización ha sido actualizada",
+          brand: quote.brand,
+          product_type: quote.product_type,
+          part_number: quote.part_number,
+          admin_notes: admin_notes || "",
+          date: new Date().toLocaleDateString("es-ES", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+        });
+
+        console.log(
+          `Status update email sent to ${quote.customer_email} for quote ${quote.quote_number}`,
+        );
+      } catch (emailError) {
+        console.error("Error sending status update email:", emailError);
+        // Don't fail the status update if email fails
+      }
+    }
+
+    res.json({
+      success: true,
+      message: "Quote status updated successfully",
+      data: {
+        ...quote,
+        status: status,
+        notes: admin_notes || quote.notes,
+        old_status: oldStatus,
+        new_status: status,
+        updated_at: new Date().toISOString(),
+      },
+    });
   } catch (error) {
     console.error("Error updating quote status:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -3731,9 +4093,17 @@ const updateQuoteStatus: RequestHandler = async (req, res) => {
 // ==================== HOME SECTIONS ====================
 const getRandomSections: RequestHandler = async (req, res) => {
   try {
-    const { count = "3", items_per_section = "4" } = req.query;
+    const {
+      count = "3",
+      items_per_section = "4",
+      exclude_types = "",
+    } = req.query;
     const sectionCount = Math.min(parseInt(count as string), 10);
     const itemsPerSection = Math.min(parseInt(items_per_section as string), 10);
+    const excludedTypes = (exclude_types as string)
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
 
     // Fetch more sections than needed to ensure we can find enough with items
     const fetchLimit = Math.max(sectionCount * 3, 20);
@@ -3777,12 +4147,19 @@ const getRandomSections: RequestHandler = async (req, res) => {
       [fetchLimit],
     );
 
-    // Combine all sections and shuffle
+    console.log(
+      `[getRandomSections] pool -> categories:${(categories as any[]).length} subcategories:${(subcategories as any[]).length} brands:${(brands as any[]).length} (manufacturers excluded:${excludedTypes.includes("manufacturer")})`,
+    );
+    // Combine all sections and shuffle (respecting excluded types)
     const allSections: any[] = [
-      ...(categories as any[]),
-      ...(subcategories as any[]),
-      ...(brands as any[]),
-      ...(manufacturers as any[]),
+      ...(excludedTypes.includes("category") ? [] : (categories as any[])),
+      ...(excludedTypes.includes("subcategory")
+        ? []
+        : (subcategories as any[])),
+      ...(excludedTypes.includes("brand") ? [] : (brands as any[])),
+      ...(excludedTypes.includes("manufacturer")
+        ? []
+        : (manufacturers as any[])),
     ];
 
     // Fisher-Yates shuffle
@@ -3799,21 +4176,42 @@ const getRandomSections: RequestHandler = async (req, res) => {
 
       switch (section.type) {
         case "category":
-          // Get subcategories for this category
+          // Get subcategories for this category; fallback to brands if none
           const [catSubcats] = await pool.execute(
             `SELECT id, name, slug, main_image FROM subcategories 
              WHERE category_id = ? AND is_active = TRUE ORDER BY RAND() LIMIT ?`,
             [section.id, itemsPerSection],
           );
           relatedItems = catSubcats as any[];
+          if (relatedItems.length === 0) {
+            // Fallback: get brands linked to this category via brand_categories or legacy category_id
+            const [catBrands] = await pool.execute(
+              `SELECT b.id, b.name, b.main_image FROM brands b
+               WHERE b.is_active = TRUE
+                 AND (b.category_id = ? OR b.id IN (
+                   SELECT brand_id FROM brand_categories WHERE category_id = ?
+                 ))
+               ORDER BY RAND() LIMIT ?`,
+              [section.id, section.id, itemsPerSection],
+            );
+            relatedItems = catBrands as any[];
+          }
           break;
 
         case "subcategory":
-          // Get brands for this subcategory
+          // Get brands for this subcategory's parent category via brand_categories or legacy category_id
           const [subcatBrands] = await pool.execute(
-            `SELECT id, name, main_image FROM brands 
-             WHERE subcategory_id = ? AND is_active = TRUE ORDER BY RAND() LIMIT ?`,
-            [section.id, itemsPerSection],
+            `SELECT b.id, b.name, b.main_image FROM brands b
+             WHERE b.is_active = TRUE
+               AND (
+                 b.category_id = (SELECT category_id FROM subcategories WHERE id = ?)
+                 OR b.id IN (
+                   SELECT brand_id FROM brand_categories
+                   WHERE category_id = (SELECT category_id FROM subcategories WHERE id = ?)
+                 )
+               )
+             ORDER BY RAND() LIMIT ?`,
+            [section.id, section.id, itemsPerSection],
           );
           relatedItems = subcatBrands as any[];
           break;
@@ -3829,19 +4227,22 @@ const getRandomSections: RequestHandler = async (req, res) => {
           break;
 
         case "brand":
-          // Get models for this brand or related subcategories
-          const [brandModels] = await pool.execute(
-            `SELECT id, name, description as main_image FROM models 
+          // Get products for this brand
+          const [brandProducts] = await pool.execute(
+            `SELECT id, name, main_image FROM products 
              WHERE brand_id = ? AND is_active = TRUE ORDER BY RAND() LIMIT ?`,
             [section.id, itemsPerSection],
           );
-          relatedItems = brandModels as any[];
+          relatedItems = brandProducts as any[];
           break;
       }
 
-      // Only include sections that have items
+      console.log(
+        `[getRandomSections] section "${section.name}" (${section.type}) -> relatedItems: ${relatedItems.length}`,
+      );
+      section.items = relatedItems;
+      // Only include sections that have items to display
       if (relatedItems.length > 0) {
-        section.items = relatedItems;
         sectionsWithItems.push(section);
 
         // Stop once we have enough sections with items
@@ -3914,13 +4315,19 @@ const getCatalogData: RequestHandler = async (req, res) => {
           );
           response.data.relatedManufacturers = mfgs;
 
-          // Get brands for this category
+          // Get brands for this category (via brand_categories, legacy category_id, or subcategory linkage)
           const [brds] = await pool.execute(
             `SELECT DISTINCT b.*, m.name as manufacturer_name
              FROM brands b
              LEFT JOIN manufacturers m ON b.manufacturer_id = m.id
-             WHERE b.category_id = ? AND b.is_active = TRUE ORDER BY b.name`,
-            [itemId],
+             WHERE b.is_active = TRUE
+               AND (
+                 b.category_id = ?
+                 OR b.subcategory_id IN (SELECT id FROM subcategories WHERE category_id = ?)
+                 OR b.id IN (SELECT brand_id FROM brand_categories WHERE category_id = ?)
+               )
+             ORDER BY b.name`,
+            [itemId, itemId, itemId],
           );
           response.data.relatedBrands = brds;
           break;
@@ -3954,14 +4361,23 @@ const getCatalogData: RequestHandler = async (req, res) => {
             );
             response.data.relatedManufacturers = mfgs;
 
-            // Get brands for this subcategory
+            // Get brands for this subcategory (via brand_categories or legacy columns)
             const [brds] = await pool.execute(
               `SELECT DISTINCT b.*, m.name as manufacturer_name, c.name as category_name
                FROM brands b
                LEFT JOIN manufacturers m ON b.manufacturer_id = m.id
                LEFT JOIN categories c ON b.category_id = c.id
-               WHERE b.subcategory_id = ? AND b.is_active = TRUE ORDER BY b.name`,
-              [itemId],
+               WHERE b.is_active = TRUE
+                 AND (
+                   b.subcategory_id = ?
+                   OR b.category_id = (SELECT category_id FROM subcategories WHERE id = ?)
+                   OR b.id IN (
+                     SELECT brand_id FROM brand_categories
+                     WHERE category_id = (SELECT category_id FROM subcategories WHERE id = ?)
+                   )
+                 )
+               ORDER BY b.name`,
+              [itemId, itemId, itemId],
             );
             response.data.relatedBrands = brds;
           }
@@ -4068,12 +4484,20 @@ const getCatalogData: RequestHandler = async (req, res) => {
       const conditions: string[] = [];
       const params: any[] = [];
 
-      // If no filters at all, return all categories
+      // If no filters at all, return all categories and all brands (for filter dropdowns)
       if (!category_id && !subcategory_id && !brand_id && !manufacturer_id) {
         const [allCategories] = await pool.execute(
           `SELECT * FROM categories WHERE is_active = TRUE ORDER BY name`,
         );
         response.data.relatedCategories = allCategories;
+
+        const [allBrands] = await pool.execute(
+          `SELECT b.id, b.name, b.main_image, b.description, b.category_id,
+                  b.subcategory_id, b.is_active
+           FROM brands b
+           WHERE b.is_active = TRUE ORDER BY b.name`,
+        );
+        response.data.relatedBrands = allBrands;
       }
 
       // Build dynamic query based on filters
@@ -4098,15 +4522,19 @@ const getCatalogData: RequestHandler = async (req, res) => {
         );
         response.data.relatedManufacturers = mfgs;
 
-        // Get brands
+        // Get brands (via brand_categories or legacy category_id)
         const [brds] = await pool.execute(
           `SELECT DISTINCT b.*, m.name as manufacturer_name, c.name as category_name, s.name as subcategory_name
            FROM brands b
            LEFT JOIN manufacturers m ON b.manufacturer_id = m.id
            LEFT JOIN categories c ON b.category_id = c.id
            LEFT JOIN subcategories s ON b.subcategory_id = s.id
-           WHERE b.category_id = ? AND b.is_active = TRUE ORDER BY b.name`,
-          [catId],
+           WHERE b.is_active = TRUE
+             AND (b.category_id = ? OR b.id IN (
+               SELECT brand_id FROM brand_categories WHERE category_id = ?
+             ))
+           ORDER BY b.name`,
+          [catId, catId],
         );
         response.data.relatedBrands = brds;
       }
@@ -4125,15 +4553,24 @@ const getCatalogData: RequestHandler = async (req, res) => {
         );
         response.data.relatedManufacturers = mfgs;
 
-        // Get brands
+        // Get brands (via brand_categories or legacy subcategory_id/category_id)
         const [brds] = await pool.execute(
           `SELECT DISTINCT b.*, m.name as manufacturer_name, c.name as category_name, s.name as subcategory_name
            FROM brands b
            LEFT JOIN manufacturers m ON b.manufacturer_id = m.id
            LEFT JOIN categories c ON b.category_id = c.id
            LEFT JOIN subcategories s ON b.subcategory_id = s.id
-           WHERE b.subcategory_id = ? AND b.is_active = TRUE ORDER BY b.name`,
-          [subcatId],
+           WHERE b.is_active = TRUE
+             AND (
+               b.subcategory_id = ?
+               OR b.category_id = (SELECT category_id FROM subcategories WHERE id = ?)
+               OR b.id IN (
+                 SELECT brand_id FROM brand_categories
+                 WHERE category_id = (SELECT category_id FROM subcategories WHERE id = ?)
+               )
+             )
+           ORDER BY b.name`,
+          [subcatId, subcatId, subcatId],
         );
         response.data.relatedBrands = brds;
       }
@@ -4191,6 +4628,9 @@ function createServer() {
   // Categories
   expressApp.get("/api/categories", getCategories);
   expressApp.get("/api/categories/validate-slug", validateCategorySlug);
+
+  // Subcategories (public)
+  expressApp.get("/api/subcategories", getSubcategories);
 
   // Brands
   expressApp.get("/api/brands", getBrands);

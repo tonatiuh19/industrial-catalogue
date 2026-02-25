@@ -178,11 +178,11 @@ const adminQuotesReducer = (
       return {
         ...state,
         quotes: state.quotes.map((q) =>
-          q.id === action.payload.id ? action.payload : q,
+          q.id === action.payload.id ? { ...q, ...action.payload } : q,
         ),
         selectedQuote:
           state.selectedQuote?.id === action.payload.id
-            ? action.payload
+            ? { ...state.selectedQuote, ...action.payload }
             : state.selectedQuote,
         loading: { isLoading: false },
         error: { hasError: false },

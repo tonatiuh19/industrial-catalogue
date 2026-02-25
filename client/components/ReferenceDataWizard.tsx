@@ -137,6 +137,9 @@ export default function ReferenceDataWizard({
   const [step, setStep] = useState(1);
   const config = getEntityConfig(type);
 
+  // Multi-category selection for brands
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
+
   // Image management
   const [entityId, setEntityId] = useState<string>(
     entity?.id ? String(entity.id) : generateTempId(),
@@ -159,12 +162,16 @@ export default function ReferenceDataWizard({
       );
       setMainImageFile(null);
       setExtraImageFiles([]);
+      if (type === "brand") {
+        setSelectedCategoryIds((entity as Brand)?.category_ids || []);
+      }
     } else {
       setEntityId(generateTempId());
       setMainImage(null);
       setExtraImages([]);
       setMainImageFile(null);
       setExtraImageFiles([]);
+      setSelectedCategoryIds([]);
     }
     setStep(1);
   }, [entity, open]);
@@ -230,8 +237,9 @@ export default function ReferenceDataWizard({
 
       if (config.hasManufacturer) {
         schema.manufacturer_id = Yup.number()
-          .required("El fabricante es requerido")
-          .positive("Selecciona un fabricante válido");
+          .nullable()
+          .positive("Selecciona un fabricante válido")
+          .optional();
       }
 
       if (type === "subcategory") {
@@ -395,6 +403,17 @@ export default function ReferenceDataWizard({
         console.log(
           `[ReferenceDataWizard] Converted manufacturer_id to:`,
           entityData.manufacturer_id,
+        );
+      }
+
+      // Attach multi-category ids for brands
+      if (type === "brand") {
+        entityData.category_ids = selectedCategoryIds;
+        // Remove legacy single category_id from payload (let API derive it from category_ids)
+        delete entityData.category_id;
+        console.log(
+          `[ReferenceDataWizard] Brand category_ids:`,
+          entityData.category_ids,
         );
       }
 
@@ -718,22 +737,86 @@ export default function ReferenceDataWizard({
                         </div>
                       )}
 
+                      {/* Multi-Category Checkboxes (Brands only) */}
+                      {type === "brand" && (
+                        <div className="space-y-2">
+                          <Label>
+                            Categorías{" "}
+                            <span className="text-gray-400 text-xs">
+                              (opcional, selecciona una o más)
+                            </span>
+                          </Label>
+                          {reference.categories.length === 0 ? (
+                            <p className="text-xs text-amber-600">
+                              No hay categorías disponibles. Crea una primero.
+                            </p>
+                          ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-md p-3">
+                              {reference.categories.map((cat) => {
+                                const checked = selectedCategoryIds.includes(
+                                  cat.id,
+                                );
+                                return (
+                                  <label
+                                    key={cat.id}
+                                    className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      className="accent-primary"
+                                      checked={checked}
+                                      onChange={() => {
+                                        setSelectedCategoryIds((prev) =>
+                                          checked
+                                            ? prev.filter((id) => id !== cat.id)
+                                            : [...prev, cat.id],
+                                        );
+                                      }}
+                                    />
+                                    <span>{cat.name}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          )}
+                          {selectedCategoryIds.length > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              {selectedCategoryIds.length} categoría
+                              {selectedCategoryIds.length > 1 ? "s" : ""}{" "}
+                              seleccionada
+                              {selectedCategoryIds.length > 1 ? "s" : ""}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       {/* Manufacturer Select (Brands only) */}
                       {config.hasManufacturer && (
                         <div className="space-y-2">
                           <Label htmlFor="manufacturer">
-                            Fabricante <span className="text-red-500">*</span>
+                            Fabricante{" "}
+                            <span className="text-gray-400 text-xs">
+                              (opcional)
+                            </span>
                           </Label>
                           <Select
-                            value={values.manufacturer_id?.toString() || ""}
+                            value={
+                              values.manufacturer_id?.toString() || "__none__"
+                            }
                             onValueChange={(value) =>
-                              setFieldValue("manufacturer_id", value)
+                              setFieldValue(
+                                "manufacturer_id",
+                                value === "__none__" ? "" : value,
+                              )
                             }
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Selecciona un fabricante" />
                             </SelectTrigger>
                             <SelectContent>
+                              <SelectItem value="__none__">
+                                Sin fabricante
+                              </SelectItem>
                               {reference.manufacturers.map((mfg) => (
                                 <SelectItem
                                   key={mfg.id}
@@ -752,7 +835,7 @@ export default function ReferenceDataWizard({
                             )}
                           {reference.manufacturers.length === 0 && (
                             <p className="text-xs text-amber-600">
-                              No hay fabricantes disponibles. Crea uno primero.
+                              No hay fabricantes disponibles.
                             </p>
                           )}
                         </div>
@@ -870,6 +953,27 @@ export default function ReferenceDataWizard({
                                 {reference.categories.find(
                                   (c) => c.id === Number(values.category_id),
                                 )?.name || "-"}
+                              </div>
+                            </>
+                          )}
+
+                          {type === "brand" && (
+                            <>
+                              <div className="text-muted-foreground">
+                                Categorías:
+                              </div>
+                              <div className="font-medium">
+                                {selectedCategoryIds.length === 0
+                                  ? "-"
+                                  : selectedCategoryIds
+                                      .map(
+                                        (id) =>
+                                          reference.categories.find(
+                                            (c) => c.id === id,
+                                          )?.name,
+                                      )
+                                      .filter(Boolean)
+                                      .join(", ")}
                               </div>
                             </>
                           )}

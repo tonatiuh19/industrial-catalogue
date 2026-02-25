@@ -160,7 +160,19 @@ export default function Home() {
 
   const fetchSections = async () => {
     try {
-      const response = await homeSectionsApi.getRandomSections(3);
+      const response = await homeSectionsApi.getRandomSections(3, [
+        "manufacturer",
+      ]);
+      console.log("[Home] fetchSections raw response:", response.data);
+      console.log(
+        "[Home] sections returned:",
+        response.data?.data?.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          type: s.type,
+          itemCount: s.items?.length,
+        })),
+      );
       if (response.data.success) {
         setSections(response.data.data);
       }
@@ -216,8 +228,13 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       <SEO
-        title="Trenor - Herramientas y Equipamiento de Calidad"
-        description="Descubre el mejor catálogo de productos industriales. Herramientas profesionales, equipamiento de calidad y soluciones innovadoras para tu empresa."
+        title="Suministros MRO Industriales en México | Transmisión de Potencia, EPP y Refacciones Técnicas | Trenor"
+        description="Proveedor líder de suministros MRO industriales en México. Especialistas en transmisión de potencia, rodamientos, refaccionamiento técnico, EPP, sistemas neumáticos e hidráulicos, herramientas de corte, bombas industriales y más. Soluciones integrales para la industria."
+        keywords="suministros MRO México, proveedor industrial México, refaccionamiento industrial técnico, transmisión de potencia, rodamientos industriales, equipo de protección personal EPP, sistemas neumáticos industriales, sistemas hidráulicos industriales, herramientas de corte y maquinado, instrumentos de medición industrial, manejo de materiales y almacenaje, bombas industriales para procesos, adhesivos industriales, selladores industriales, lubricantes industriales, ferretería industrial, sujetadores industriales"
+        url="https://www.trenor.com.mx/"
+        image="https://disruptinglabs.com/data/trenor/assets/images/logo_dark_trenor.png"
+        geoRegion="MX"
+        geoPlacename="México"
       />
       {/* Fixed Header */}
       <header
@@ -512,7 +529,7 @@ export default function Home() {
                 return (
                   <Link
                     key={category.id}
-                    to={`/catalog?category=${category.slug}`}
+                    to={`/catalog?type=category&id=${category.id}`}
                     className="group block"
                   >
                     <div className="bg-white border-2 border-steel-200 rounded-2xl overflow-hidden hover:border-accent hover:shadow-xl transition-all duration-300 hover:-translate-y-2 p-4">

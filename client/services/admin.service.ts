@@ -72,7 +72,10 @@ export const adminQuotesApi = {
     id: number,
     data: { status?: string; admin_notes?: string },
   ) => {
-    const response = await axios.put(`${API_BASE_URL}/quotes/${id}`, data);
+    const response = await axios.put(
+      `${API_BASE_URL}/quotes/${id}/status`,
+      data,
+    );
     return response.data;
   },
 };
