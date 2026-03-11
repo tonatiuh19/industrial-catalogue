@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   MessageSquare,
   HelpCircle,
+  SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +49,12 @@ const navigation = [
     name: "Gestión FAQ",
     href: "/admin/faq-management",
     icon: HelpCircle,
+    roles: ["admin", "super_admin"],
+  },
+  {
+    name: "Carrusel",
+    href: "/admin/carousel",
+    icon: SlidersHorizontal,
     roles: ["admin", "super_admin"],
   },
   {

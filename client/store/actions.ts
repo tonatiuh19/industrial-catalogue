@@ -40,6 +40,11 @@ export enum ActionType {
 
   // Global loading
   SET_GLOBAL_LOADING = "SET_GLOBAL_LOADING",
+
+  // Home data
+  FETCH_HOME_DATA_REQUEST = "FETCH_HOME_DATA_REQUEST",
+  FETCH_HOME_DATA_SUCCESS = "FETCH_HOME_DATA_SUCCESS",
+  FETCH_HOME_DATA_FAILURE = "FETCH_HOME_DATA_FAILURE",
 }
 
 // Action interfaces
@@ -103,6 +108,16 @@ export interface FetchModelsSuccessAction {
   payload: Model[];
 }
 
+export interface FetchHomeDataSuccessAction {
+  type: ActionType.FETCH_HOME_DATA_SUCCESS;
+  payload: {
+    carousel: any[];
+    categories: any[];
+    brands: any[];
+    sections: any[];
+  };
+}
+
 export interface SetGlobalLoadingAction {
   type: ActionType.SET_GLOBAL_LOADING;
   payload: LoadingState;
@@ -122,6 +137,7 @@ export type Action =
   | FetchManufacturersSuccessAction
   | FetchBrandsSuccessAction
   | FetchModelsSuccessAction
+  | FetchHomeDataSuccessAction
   | SetGlobalLoadingAction
   | { type: ActionType.FETCH_CATEGORIES_REQUEST }
   | { type: ActionType.FETCH_CATEGORIES_FAILURE; payload: string }
@@ -130,4 +146,6 @@ export type Action =
   | { type: ActionType.FETCH_BRANDS_REQUEST }
   | { type: ActionType.FETCH_BRANDS_FAILURE; payload: string }
   | { type: ActionType.FETCH_MODELS_REQUEST }
-  | { type: ActionType.FETCH_MODELS_FAILURE; payload: string };
+  | { type: ActionType.FETCH_MODELS_FAILURE; payload: string }
+  | { type: ActionType.FETCH_HOME_DATA_REQUEST }
+  | { type: ActionType.FETCH_HOME_DATA_FAILURE; payload: string };

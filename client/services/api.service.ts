@@ -290,6 +290,48 @@ export const homeSectionsApi = {
   },
 };
 
+// Home Page unified API
+export const homeApi = {
+  getData: () => httpClient.get<ApiResponse<any>>("/home"),
+};
+
+// Hero Carousel API
+export const heroCarouselApi = {
+  getSlides: () => httpClient.get<ApiResponse<any[]>>("/hero-carousel"),
+
+  // Admin CRUD
+  adminGetSlides: () =>
+    httpClient.get<ApiResponse<any[]>>("/admin/hero-carousel"),
+  createSlide: (data: {
+    title: string;
+    subtitle?: string;
+    description?: string;
+    background_image: string;
+    cta_text?: string;
+    cta_link?: string;
+    sort_order?: number;
+    is_active?: boolean;
+  }) =>
+    httpClient.post<ApiResponse<{ id: number }>>("/admin/hero-carousel", data),
+  updateSlide: (
+    id: number,
+    data: Partial<{
+      title: string;
+      subtitle: string;
+      description: string;
+      background_image: string;
+      cta_text: string;
+      cta_link: string;
+      sort_order: number;
+      is_active: boolean;
+    }>,
+  ) => httpClient.put<ApiResponse>(`/admin/hero-carousel/${id}`, data),
+  deleteSlide: (id: number) =>
+    httpClient.delete<ApiResponse>(`/admin/hero-carousel/${id}`),
+  reorderSlides: (order: Array<{ id: number; sort_order: number }>) =>
+    httpClient.put<ApiResponse>("/admin/hero-carousel/reorder", { order }),
+};
+
 // Catalog API
 export const catalogApi = {
   getCatalogData: (params?: {

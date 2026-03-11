@@ -28,7 +28,7 @@ import HeroCarousel from "@/components/HeroCarousel";
 import QuickQuoteForm from "@/components/QuickQuoteForm";
 import { useQuote } from "@/context/QuoteContext";
 import { getImageUrl } from "@/services/image-upload.service";
-import { homeSectionsApi } from "@/services/api.service";
+import { useStore, useHomeData } from "@/store/StoreContext";
 
 interface HomeSectionItem {
   id: number;
@@ -62,15 +62,17 @@ interface CategoryWithIcon {
 export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showFloatingButton, setShowFloatingButton] = useState(false);
-  const [sections, setSections] = useState<HomeSectionItem[]>([]);
-  const [brands, setBrands] = useState<Array<{ id: number; name: string }>>([]);
-  const [categories, setCategories] = useState<CategoryWithIcon[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [brandsLoading, setBrandsLoading] = useState(true);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const { actions } = useStore();
+  const homeData = useHomeData();
+  const sections = homeData.sections as HomeSectionItem[];
+  const brands = homeData.brands as Array<{ id: number; name: string }>;
+  const categories = homeData.categories as CategoryWithIcon[];
+  const carouselSlides = homeData.carousel;
+  const loading = homeData.loading.isLoading;
+  const brandsLoading = homeData.loading.isLoading;
+  const categoriesLoading = homeData.loading.isLoading;
   const { isNewWizardOpen, openNewWizard, closeNewWizard, prefillData } =
     useQuote();
-
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
@@ -85,39 +87,8 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    fetchSections();
-    fetchBrands();
-    fetchCategories();
+    actions.fetchHomeData();
   }, []);
-
-  const fetchBrands = async () => {
-    try {
-      const response = await fetch("/api/brands");
-      const data = await response.json();
-      if (data.success && data.data) {
-        // Get first 15 brands or all if less than 15
-        setBrands(data.data.slice(0, 15));
-      }
-    } catch (error) {
-      console.error("Error fetching brands:", error);
-    } finally {
-      setBrandsLoading(false);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch("/api/categories");
-      const data = await response.json();
-      if (data.success && data.data) {
-        setCategories(data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    } finally {
-      setCategoriesLoading(false);
-    }
-  };
 
   // Map category slug to React Icons
   const getIconForCategory = (slug: string): IconType => {
@@ -151,21 +122,6 @@ export default function Home() {
       "industrial-tools": "from-steel-500 to-steel-600",
     };
     return colorMap[slug] || "from-gray-500 to-gray-600";
-  };
-
-  const fetchSections = async () => {
-    try {
-      const response = await homeSectionsApi.getRandomSections(3, [
-        "manufacturer",
-      ]);
-      if (response.data.success) {
-        setSections(response.data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching sections:", error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const getSectionTypeLabel = (type: string) => {
@@ -286,7 +242,7 @@ export default function Home() {
       </header>
 
       {/* Hero Carousel */}
-      <HeroCarousel />
+      <HeroCarousel slides={carouselSlides} />
 
       {/* Quick Quote Form - Full Width After Hero */}
       <QuickQuoteForm
@@ -313,15 +269,15 @@ export default function Home() {
                   to={`/catalog?type=${section.type}&id=${section.id}`}
                   className="group block"
                 >
-                  <div className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                  <div className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 aspect-video">
                     {section.main_image ? (
                       <img
                         src={getImageUrl(section.main_image)}
                         alt={section.name}
-                        className="w-full aspect-video object-cover group-hover:scale-110 transition-transform duration-300"
+                        className="absolute inset-0 w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
                       />
                     ) : (
-                      <div className="w-full aspect-video bg-steel-100 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-steel-100 flex items-center justify-center">
                         <Box className="w-12 h-12 sm:w-16 sm:h-16 text-steel-400" />
                       </div>
                     )}
@@ -417,7 +373,7 @@ export default function Home() {
                                     <img
                                       src={getImageUrl(item.main_image)}
                                       alt={item.name}
-                                      className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-300"
+                                      className="w-full h-full object-contain group-hover/item:scale-110 transition-transform duration-300"
                                     />
                                   ) : (
                                     <Box className="w-10 h-10 sm:w-12 sm:h-12 text-steel-400 group-hover/item:text-accent transition-colors" />

@@ -53,10 +53,21 @@ export interface FilterOptionsState {
   error: ErrorState;
 }
 
+// Home data state
+export interface HomeDataState {
+  carousel: any[];
+  categories: any[];
+  brands: any[];
+  sections: any[];
+  loading: LoadingState;
+  error: ErrorState;
+}
+
 // Global app state
 export interface AppState {
   products: ProductsState;
   filterOptions: FilterOptionsState;
+  homeData: HomeDataState;
   globalLoading: LoadingState;
 }
 
@@ -84,8 +95,18 @@ export const initialFilterOptionsState: FilterOptionsState = {
   error: { hasError: false },
 };
 
+export const initialHomeDataState: HomeDataState = {
+  carousel: [],
+  categories: [],
+  brands: [],
+  sections: [],
+  loading: { isLoading: false },
+  error: { hasError: false },
+};
+
 export const initialAppState: AppState = {
   products: initialProductsState,
   filterOptions: initialFilterOptionsState,
+  homeData: initialHomeDataState,
   globalLoading: { isLoading: false },
 };

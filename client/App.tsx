@@ -32,6 +32,7 @@ import ContentPages from "./pages/admin/ContentPages";
 import Settings from "./pages/admin/Settings";
 import SupportTickets from "./pages/admin/SupportTickets";
 import FAQManagement from "./pages/admin/FAQManagement";
+import CarouselManagement from "./pages/admin/CarouselManagement";
 import ScrollToTop from "@/components/ScrollToTop";
 import WhatsAppBubble from "@/components/WhatsAppBubble";
 
@@ -66,6 +67,7 @@ const AppContent = () => {
             <Route path="quotes" element={<Quotes />} />
             <Route path="support-tickets" element={<SupportTickets />} />
             <Route path="faq-management" element={<FAQManagement />} />
+            <Route path="carousel" element={<CarouselManagement />} />
             <Route path="users" element={<Users />} />
             <Route path="content" element={<ContentPages />} />
             <Route path="settings" element={<Settings />} />

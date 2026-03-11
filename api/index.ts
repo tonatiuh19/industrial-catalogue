@@ -4090,7 +4090,267 @@ const updateQuoteStatus: RequestHandler = async (req, res) => {
   }
 };
 
+// ==================== HERO CAROUSEL ====================
+const getCarouselSlides: RequestHandler = async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT id, title, subtitle, description, background_image, cta_text, cta_link, sort_order, is_active
+       FROM hero_carousel_slides
+       WHERE is_active = TRUE
+       ORDER BY sort_order ASC`,
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error("Error fetching carousel slides:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+const getAdminCarouselSlides: RequestHandler = async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT id, title, subtitle, description, background_image, cta_text, cta_link, sort_order, is_active, created_at, updated_at
+       FROM hero_carousel_slides
+       ORDER BY sort_order ASC`,
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error("Error fetching admin carousel slides:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+const createCarouselSlide: RequestHandler = async (req, res) => {
+  try {
+    const {
+      title,
+      subtitle,
+      description,
+      background_image,
+      cta_text,
+      cta_link,
+      sort_order,
+      is_active,
+    } = req.body;
+    if (!title || !background_image) {
+      return res.status(400).json({
+        success: false,
+        message: "title and background_image are required",
+      });
+    }
+    const [result] = await pool.execute(
+      `INSERT INTO hero_carousel_slides (title, subtitle, description, background_image, cta_text, cta_link, sort_order, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        title,
+        subtitle ?? null,
+        description ?? null,
+        background_image,
+        cta_text ?? "Ver Catálogo",
+        cta_link ?? "/catalog",
+        sort_order ?? 0,
+        is_active !== undefined ? (is_active ? 1 : 0) : 1,
+      ],
+    );
+    const insertId = (result as any).insertId;
+    res.status(201).json({ success: true, data: { id: insertId } });
+  } catch (error) {
+    console.error("Error creating carousel slide:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+const updateCarouselSlide: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      title,
+      subtitle,
+      description,
+      background_image,
+      cta_text,
+      cta_link,
+      sort_order,
+      is_active,
+    } = req.body;
+    await pool.execute(
+      `UPDATE hero_carousel_slides
+       SET title = ?, subtitle = ?, description = ?, background_image = ?, cta_text = ?, cta_link = ?, sort_order = ?, is_active = ?
+       WHERE id = ?`,
+      [
+        title,
+        subtitle ?? null,
+        description ?? null,
+        background_image,
+        cta_text ?? "Ver Catálogo",
+        cta_link ?? "/catalog",
+        sort_order ?? 0,
+        is_active ? 1 : 0,
+        id,
+      ],
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error updating carousel slide:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+const deleteCarouselSlide: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.execute(`DELETE FROM hero_carousel_slides WHERE id = ?`, [id]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting carousel slide:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+const reorderCarouselSlides: RequestHandler = async (req, res) => {
+  try {
+    const { order } = req.body; // array of { id, sort_order }
+    if (!Array.isArray(order)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "order must be an array" });
+    }
+    for (const item of order) {
+      await pool.execute(
+        `UPDATE hero_carousel_slides SET sort_order = ? WHERE id = ?`,
+        [item.sort_order, item.id],
+      );
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error reordering carousel slides:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
 // ==================== HOME SECTIONS ====================
+const getHomeData: RequestHandler = async (req, res) => {
+  try {
+    const sectionsCount = 3;
+    const itemsPerSection = 4;
+    const fetchLimit = Math.max(sectionsCount * 3, 20);
+
+    // Run all queries in parallel
+    const [
+      carouselRows,
+      categoriesRows,
+      brandsRows,
+      catSections,
+      subcatSections,
+      brandSections,
+    ] = await Promise.all([
+      pool.execute(
+        `SELECT id, title, subtitle, description, background_image, cta_text, cta_link, sort_order
+         FROM hero_carousel_slides WHERE is_active = TRUE ORDER BY sort_order ASC`,
+      ),
+      pool.execute(
+        `SELECT id, name, slug, description, main_image FROM categories WHERE is_active = TRUE ORDER BY name ASC`,
+      ),
+      pool.execute(
+        `SELECT id, name FROM brands WHERE is_active = TRUE ORDER BY name ASC LIMIT 15`,
+      ),
+      pool.execute(
+        `SELECT id, name, slug, description, main_image, 'category' as type
+         FROM categories WHERE is_active = TRUE ORDER BY RAND() LIMIT ?`,
+        [fetchLimit],
+      ),
+      pool.execute(
+        `SELECT s.id, s.name, s.slug, s.description, s.main_image, 'subcategory' as type,
+                s.category_id, c.name as category_name
+         FROM subcategories s
+         LEFT JOIN categories c ON s.category_id = c.id
+         WHERE s.is_active = TRUE ORDER BY RAND() LIMIT ?`,
+        [fetchLimit],
+      ),
+      pool.execute(
+        `SELECT b.id, b.name, b.description, b.main_image, 'brand' as type,
+                b.manufacturer_id, m.name as manufacturer_name,
+                b.category_id, c.name as category_name,
+                b.subcategory_id, s.name as subcategory_name
+         FROM brands b
+         LEFT JOIN manufacturers m ON b.manufacturer_id = m.id
+         LEFT JOIN categories c ON b.category_id = c.id
+         LEFT JOIN subcategories s ON b.subcategory_id = s.id
+         WHERE b.is_active = TRUE ORDER BY RAND() LIMIT ?`,
+        [fetchLimit],
+      ),
+    ]);
+
+    // Shuffle and pick featured sections with items
+    const allSections: any[] = [
+      ...(catSections[0] as any[]),
+      ...(subcatSections[0] as any[]),
+      ...(brandSections[0] as any[]),
+    ];
+    for (let i = allSections.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allSections[i], allSections[j]] = [allSections[j], allSections[i]];
+    }
+
+    const sectionsWithItems: any[] = [];
+    for (const section of allSections) {
+      if (sectionsWithItems.length >= sectionsCount) break;
+      let relatedItems: any[] = [];
+      switch (section.type) {
+        case "category": {
+          const [catSubcats] = await pool.execute(
+            `SELECT id, name, slug, main_image FROM subcategories WHERE category_id = ? AND is_active = TRUE ORDER BY RAND() LIMIT ?`,
+            [section.id, itemsPerSection],
+          );
+          relatedItems = catSubcats as any[];
+          if (relatedItems.length === 0) {
+            const [catBrands] = await pool.execute(
+              `SELECT b.id, b.name, b.main_image FROM brands b
+               WHERE b.is_active = TRUE AND (b.category_id = ? OR b.id IN (SELECT brand_id FROM brand_categories WHERE category_id = ?))
+               ORDER BY RAND() LIMIT ?`,
+              [section.id, section.id, itemsPerSection],
+            );
+            relatedItems = catBrands as any[];
+          }
+          break;
+        }
+        case "subcategory": {
+          const [subcatBrands] = await pool.execute(
+            `SELECT b.id, b.name, b.main_image FROM brands b WHERE b.subcategory_id = ? AND b.is_active = TRUE ORDER BY RAND() LIMIT ?`,
+            [section.id, itemsPerSection],
+          );
+          relatedItems = subcatBrands as any[];
+          break;
+        }
+        case "brand": {
+          const [brandModels] = await pool.execute(
+            `SELECT m.id, m.name FROM models m WHERE m.brand_id = ? AND m.is_active = TRUE ORDER BY RAND() LIMIT ?`,
+            [section.id, itemsPerSection],
+          );
+          relatedItems = brandModels as any[];
+          break;
+        }
+      }
+      if (relatedItems.length > 0) {
+        sectionsWithItems.push({ ...section, items: relatedItems });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        carousel: carouselRows[0],
+        categories: categoriesRows[0],
+        brands: brandsRows[0],
+        sections: sectionsWithItems,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching home data:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
 const getRandomSections: RequestHandler = async (req, res) => {
   try {
     const {
@@ -4646,8 +4906,12 @@ function createServer() {
   expressApp.get("/api/products/:id", getProductById);
 
   // Home Sections
+  expressApp.get("/api/home", getHomeData);
   expressApp.get("/api/home/sections", getRandomSections);
   expressApp.get("/api/catalog", getCatalogData);
+
+  // Hero Carousel (public)
+  expressApp.get("/api/hero-carousel", getCarouselSlides);
 
   // Quotes
   expressApp.get("/api/quotes", getQuotes);
@@ -4759,6 +5023,13 @@ function createServer() {
   expressApp.post("/api/admin/faq/items", createFAQItem);
   expressApp.put("/api/admin/faq/items/:id", updateFAQItem);
   expressApp.delete("/api/admin/faq/items/:id", deleteFAQItem);
+
+  // Admin Hero Carousel (protected)
+  expressApp.get("/api/admin/hero-carousel", getAdminCarouselSlides);
+  expressApp.post("/api/admin/hero-carousel", createCarouselSlide);
+  expressApp.put("/api/admin/hero-carousel/reorder", reorderCarouselSlides);
+  expressApp.put("/api/admin/hero-carousel/:id", updateCarouselSlide);
+  expressApp.delete("/api/admin/hero-carousel/:id", deleteCarouselSlide);
 
   // 404 handler
   expressApp.use("/api", (_req, res) => {

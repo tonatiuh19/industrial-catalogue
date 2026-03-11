@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Feb 25, 2026 at 05:05 PM
+-- Generation Time: Mar 10, 2026 at 08:15 PM
 -- Server version: 5.7.23-23
 -- PHP Version: 8.1.34
 
@@ -51,7 +51,8 @@ INSERT INTO `admins` (`id`, `email`, `password_hash`, `role`, `first_name`, `las
 (3, 'ing.bryanpadilla@gmail.com', '', 'super_admin', 'Bryan', 'Padilla', NULL, 1, 1, '2025-12-07 04:43:17', '2025-12-17 17:05:19', '2025-12-17 17:05:19'),
 (5, 'mosquedajulian97@gmail.com', NULL, 'super_admin', 'Julian', 'Mosqueda', NULL, 1, 0, '2026-01-09 00:23:04', '2026-01-09 00:23:04', NULL),
 (6, 'rrrf2096@gmail.com', NULL, 'super_admin', 'Ricardo', 'Ruiz', NULL, 1, 0, '2026-01-09 01:07:23', '2026-01-09 01:07:23', NULL),
-(7, 'srz.josemaria@gmail.com', NULL, 'super_admin', 'Josemaria', 'Suarez', NULL, 1, 0, '2026-01-09 01:10:51', '2026-01-09 01:10:51', NULL);
+(7, 'srz.josemaria@gmail.com', NULL, 'super_admin', 'Josemaria', 'Suarez', NULL, 1, 0, '2026-01-09 01:10:51', '2026-01-09 01:10:51', NULL),
+(8, 'ventas@grupotrenor.com', NULL, 'super_admin', 'GRUPO', 'TRENOR', '4775990905', 1, 0, '2026-03-10 17:29:00', '2026-03-10 17:29:00', NULL);
 
 -- --------------------------------------------------------
 
@@ -73,8 +74,8 @@ CREATE TABLE `admin_notifications` (
 --
 
 INSERT INTO `admin_notifications` (`id`, `admin_id`, `notification_type`, `is_enabled`, `created_at`, `updated_at`) VALUES
-(1, 1, 'quote_requests', 1, '2026-02-03 22:35:07', '2026-02-20 20:00:32'),
-(2, 3, 'quote_requests', 0, '2026-02-03 22:35:07', '2026-02-20 20:00:30'),
+(1, 1, 'quote_requests', 0, '2026-02-03 22:35:07', '2026-03-10 17:27:25'),
+(2, 3, 'quote_requests', 1, '2026-02-03 22:35:07', '2026-03-10 17:27:17'),
 (3, 5, 'quote_requests', 0, '2026-02-03 22:35:07', '2026-02-03 22:53:41'),
 (4, 6, 'quote_requests', 0, '2026-02-03 22:35:07', '2026-02-03 22:53:43'),
 (5, 7, 'quote_requests', 0, '2026-02-03 22:35:07', '2026-02-03 22:53:39'),
@@ -154,7 +155,10 @@ INSERT INTO `admin_sessions` (`id`, `user_id`, `session_code`, `is_active`, `exp
 (45, 3, 237733, 1, '2026-02-22 02:18:20', '2026-02-20 20:17:51'),
 (46, 1, 263457, 1, '2026-02-22 04:23:51', '2026-02-20 22:23:35'),
 (47, 1, 564030, 1, '2026-02-26 21:48:35', '2026-02-25 21:48:22'),
-(48, 1, 422890, 1, '2026-02-26 22:43:23', '2026-02-25 22:43:07');
+(48, 1, 422890, 1, '2026-02-26 22:43:23', '2026-02-25 22:43:07'),
+(49, 3, 423577, 1, '2026-02-27 05:50:43', '2026-02-25 23:50:29'),
+(50, 8, 607851, 1, '2026-03-11 23:30:23', '2026-03-10 17:29:32'),
+(51, 8, 256442, 0, '2026-03-10 17:40:05', '2026-03-10 17:30:05');
 
 -- --------------------------------------------------------
 
@@ -182,14 +186,117 @@ CREATE TABLE `brands` (
 --
 
 INSERT INTO `brands` (`id`, `name`, `manufacturer_id`, `category_id`, `subcategory_id`, `description`, `main_image`, `extra_images`, `logo_url`, `is_active`, `created_at`, `updated_at`) VALUES
-(9, 'SKF', 10, 7, NULL, '', '/data/industrial_catalogue/9/main_image/6976aebdc793e_1769385661.png', NULL, NULL, 1, '2026-01-08 04:02:33', '2026-01-26 00:01:02'),
-(10, 'NSK', 11, 7, NULL, '', '/data/industrial_catalogue/brand_10/main_image/699267b2ed61f_1771202482.png', NULL, NULL, 1, '2026-01-08 16:12:37', '2026-02-16 00:41:23'),
-(11, 'ABB', 12, 8, NULL, '', '/data/industrial_catalogue/brand_11/main_image/69926844a3354_1771202628.png', NULL, NULL, 1, '2026-01-08 16:40:29', '2026-02-16 00:43:48'),
-(12, 'WEG', 15, 7, NULL, '', '/data/industrial_catalogue/12/main_image/6976b0f292137_1769386226.png', NULL, NULL, 1, '2026-01-08 16:40:37', '2026-02-25 22:59:49'),
-(13, 'Siemens', 14, 8, NULL, '', '/data/industrial_catalogue/brand_13/main_image/69926855e425d_1771202645.png', NULL, NULL, 1, '2026-01-08 16:40:48', '2026-02-16 00:44:06'),
-(14, 'Baldor-Reliance', 13, 17, NULL, '', '/data/industrial_catalogue/14/main_image/6976b12738311_1769386279.png', NULL, NULL, 1, '2026-01-08 16:40:55', '2026-02-25 22:59:35'),
-(15, 'Timken', 16, 9, NULL, '', '/data/industrial_catalogue/15/main_image/6976b4528ebd2_1769387090.png', NULL, NULL, 1, '2026-01-08 16:41:02', '2026-02-25 22:59:42'),
-(17, '3M', 17, 17, NULL, 'Fabricante equipo de proteccion personal', '/data/industrial_catalogue/brand_temp_1771209569270_gphuefox0/main_image/6992837715b70_1771209591.jpg', NULL, NULL, 1, '2026-02-16 02:39:51', '2026-02-25 22:57:24');
+(9, 'SKF', 10, 7, NULL, '', '/data/industrial_catalogue/brand_9/main_image/69a077d4ea8c0_1772124116.jpg', NULL, NULL, 1, '2026-01-08 04:02:33', '2026-02-26 16:41:57'),
+(15, 'Timken', 16, 7, NULL, '', '/data/industrial_catalogue/15/main_image/6976b4528ebd2_1769387090.png', NULL, NULL, 1, '2026-01-08 16:41:02', '2026-02-26 15:37:23'),
+(17, '3M', 17, 12, NULL, '', '/data/industrial_catalogue/brand_17/main_image/69aaf456e1c4a_1772811350.png', NULL, NULL, 1, '2026-02-16 02:39:51', '2026-03-06 15:46:56'),
+(19, 'SMC', NULL, 18, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772491381773_kqig56m9l/main_image/69a612f1b230e_1772491505.png', NULL, NULL, 1, '2026-03-02 22:45:07', '2026-03-02 22:45:07'),
+(20, 'Festo', NULL, 18, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772491667352_9t749dxn1/main_image/69a613c19158a_1772491713.png', NULL, NULL, 1, '2026-03-02 22:48:33', '2026-03-02 22:48:33'),
+(21, 'Parker Hannifin', NULL, 18, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772491800442_6itxokoly/main_image/69a61439629ac_1772491833.png', NULL, NULL, 1, '2026-03-02 22:50:33', '2026-03-02 22:50:33'),
+(23, 'IMI Norgren', NULL, 18, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772492056133_ti56ag2ko/main_image/69a6152926d51_1772492073.png', NULL, NULL, 1, '2026-03-02 22:54:33', '2026-03-02 22:54:33'),
+(24, 'Emerson aventics', NULL, 18, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772492243200_nexci8hsm/main_image/69a615e4b43e7_1772492260.png', NULL, NULL, 1, '2026-03-02 22:57:40', '2026-03-02 22:57:40'),
+(26, 'Danfoss', NULL, 9, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772492590325_8ldmbirii/main_image/69a6173f155cf_1772492607.png', NULL, NULL, 1, '2026-03-02 23:03:27', '2026-03-02 23:03:27'),
+(27, 'Hydac', NULL, 9, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772492658839_8lk58nip5/main_image/69a617b97543f_1772492729.png', NULL, NULL, 1, '2026-03-02 23:05:29', '2026-03-02 23:05:29'),
+(28, 'Kawasaki', NULL, 9, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772492830791_brpy7jlmx/main_image/69a6183c2dfc7_1772492860.png', NULL, NULL, 1, '2026-03-02 23:07:40', '2026-03-02 23:07:40'),
+(29, 'Enerpac', NULL, 9, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772492903206_3gnrjo1cp/main_image/69a618749e366_1772492916.png', NULL, NULL, 1, '2026-03-02 23:08:36', '2026-03-02 23:08:36'),
+(30, 'Vickers', NULL, 9, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772492960362_spjgzyt9y/main_image/69a618b634d07_1772492982.png', NULL, NULL, 1, '2026-03-02 23:09:42', '2026-03-02 23:09:42'),
+(31, 'Danfoss charlyn', NULL, 9, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772493129415_vaxdtylj8/main_image/69a6196415986_1772493156.png', NULL, NULL, 1, '2026-03-02 23:12:36', '2026-03-02 23:12:36'),
+(32, 'Wika', NULL, 9, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772493191172_svgwjpdoe/main_image/69a619af917cd_1772493231.png', NULL, NULL, 1, '2026-03-02 23:13:51', '2026-03-02 23:13:51'),
+(33, 'SPX', NULL, 9, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772493313737_cjy60xcwn/main_image/69a61a1c324fa_1772493340.png', NULL, NULL, 1, '2026-03-02 23:15:40', '2026-03-02 23:15:40'),
+(34, 'Gates', NULL, 14, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772493429579_2q9i0xyiw/main_image/69a61af887fce_1772493560.png', NULL, NULL, 1, '2026-03-02 23:19:20', '2026-03-02 23:19:20'),
+(35, 'Tsubaki', NULL, 14, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772493602054_75es406s5/main_image/69a61b35694ee_1772493621.png', NULL, NULL, 1, '2026-03-02 23:20:21', '2026-03-02 23:20:21'),
+(37, 'Martin Sprocket', NULL, 8, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772493838228_k125umdfo/main_image/69a61c47a6e3a_1772493895.png', NULL, NULL, 1, '2026-03-02 23:24:55', '2026-03-02 23:24:55'),
+(38, 'Falk', NULL, 14, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772493930675_mwql09bvb/main_image/69a61c79e1126_1772493945.png', NULL, NULL, 1, '2026-03-02 23:25:46', '2026-03-02 23:25:46'),
+(39, 'Boston regal', NULL, 14, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772493975526_ax47gmu8p/main_image/69a61ca9175be_1772493993.png', NULL, NULL, 1, '2026-03-02 23:26:33', '2026-03-02 23:26:33'),
+(41, 'TB woods', NULL, 14, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772494110780_8wnk8bywt/main_image/69a61d2e022ab_1772494126.png', NULL, NULL, 1, '2026-03-02 23:28:46', '2026-03-02 23:28:46'),
+(42, 'Navitek', NULL, 21, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772810792644_q3qmruki3/main_image/69aaf23cd647f_1772810812.png', NULL, NULL, 1, '2026-03-06 15:26:54', '2026-03-06 15:26:54'),
+(43, 'Tuk', NULL, 21, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772810863357_7o812wm84/main_image/69aaf2882341a_1772810888.png', NULL, NULL, 1, '2026-03-06 15:28:08', '2026-03-06 15:28:08'),
+(44, 'Tesa', NULL, 21, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772810960277_l5uai7lpi/main_image/69aaf2ddeaae2_1772810973.jpg', NULL, NULL, 1, '2026-03-06 15:29:34', '2026-03-06 15:29:34'),
+(45, 'Henkel', NULL, 21, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772811007346_lmcieswbc/main_image/69aaf30e81ae5_1772811022.jpg', NULL, NULL, 1, '2026-03-06 15:30:22', '2026-03-06 15:30:22'),
+(46, 'Gorilla tape', NULL, 21, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772811111083_vnobi0mxy/main_image/69aaf37607dcc_1772811126.jpg', NULL, NULL, 1, '2026-03-06 15:32:06', '2026-03-06 15:32:06'),
+(47, 'DEWALT', NULL, 20, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772811386414_3gwifkowq/main_image/69aaf5011f0ad_1772811521.jpg', NULL, NULL, 1, '2026-03-06 15:38:41', '2026-03-06 15:38:41'),
+(49, 'Saint Gobain', NULL, 20, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772811730198_o5o5cnves/main_image/69aaf5e3ae1e9_1772811747.png', NULL, NULL, 1, '2026-03-06 15:42:27', '2026-03-06 15:42:27'),
+(50, 'Norton Saint Gobain', NULL, 20, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772811793026_oqoj7swbz/main_image/69aaf6232a186_1772811811.png', NULL, NULL, 1, '2026-03-06 15:43:31', '2026-03-06 15:43:31'),
+(51, 'Weiler', NULL, 20, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772811865154_u0fo2e130/main_image/69aaf66901e95_1772811881.png', NULL, NULL, 1, '2026-03-06 15:44:41', '2026-03-06 15:44:41'),
+(52, 'Klingspor', NULL, 20, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772811966518_bkoykb5br/main_image/69aaf6de8c08f_1772811998.png', NULL, NULL, 1, '2026-03-06 15:46:38', '2026-03-06 15:46:38'),
+(53, 'Fandeli', NULL, 20, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772812124776_9tbnd200s/main_image/69aaf79be03d1_1772812187.png', NULL, NULL, 1, '2026-03-06 15:49:48', '2026-03-06 15:49:48'),
+(54, 'Grundfos', NULL, 22, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772812528636_2i59siicv/main_image/69aaf901b0bec_1772812545.png', NULL, NULL, 1, '2026-03-06 15:55:46', '2026-03-06 15:55:46'),
+(55, 'Goulds Pumps (ITT)', NULL, 22, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772812603556_pm7s7tgki/main_image/69aaf94b44a49_1772812619.png', NULL, NULL, 1, '2026-03-06 15:56:59', '2026-03-06 15:56:59'),
+(63, 'KSB', NULL, 22, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772813190868_qci2cvmo4/main_image/69aafb98710bf_1772813208.png', NULL, NULL, 1, '2026-03-06 16:06:48', '2026-03-06 16:06:48'),
+(64, 'Barmesa', NULL, 22, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772813262333_bqqpw9hqo/main_image/69aafbdcd8833_1772813276.jpg', NULL, NULL, 1, '2026-03-06 16:07:57', '2026-03-06 16:07:57'),
+(65, 'Wilden', NULL, 22, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772813303088_2tyd8py3t/main_image/69aafc043f28e_1772813316.png', NULL, NULL, 1, '2026-03-06 16:08:36', '2026-03-06 16:08:36'),
+(66, 'Franklin Electric ', NULL, 22, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772813397935_1208ydw4b/main_image/69aafc820edfb_1772813442.png', NULL, NULL, 1, '2026-03-06 16:10:42', '2026-03-06 16:10:42'),
+(67, 'Wilo', NULL, 22, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772813501812_ueuc16u2l/main_image/69aafcce60136_1772813518.png', NULL, NULL, 1, '2026-03-06 16:11:58', '2026-03-06 16:11:58'),
+(68, 'Evans', NULL, 22, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772813631855_igwds6bo9/main_image/69aafd4d1a53a_1772813645.png', NULL, NULL, 1, '2026-03-06 16:14:05', '2026-03-06 16:14:05'),
+(69, 'THK', NULL, 19, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772813710754_7n1wtbrdg/main_image/69aafdb8e576b_1772813752.png', NULL, NULL, 1, '2026-03-06 16:15:53', '2026-03-06 16:15:53'),
+(70, 'HIWIN', NULL, 19, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772813817749_w1pztrpa6/main_image/69aafe1dbbf85_1772813853.png', NULL, NULL, 1, '2026-03-06 16:17:33', '2026-03-06 16:17:34'),
+(72, 'NSK', NULL, 19, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772814013467_iqn0lrgdm/main_image/69aafece963e5_1772814030.png', NULL, NULL, 1, '2026-03-06 16:20:30', '2026-03-06 16:20:30'),
+(73, 'Schaeffler (INA/FAG)', NULL, 19, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772814103045_j8amcmdf5/main_image/69aaff7c178fb_1772814204.png', NULL, NULL, 1, '2026-03-06 16:23:24', '2026-03-06 16:23:24'),
+(74, 'Bosch rexroth', NULL, 19, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772814454305_f8n5uj1np/main_image/69ab008769708_1772814471.png', NULL, NULL, 1, '2026-03-06 16:27:51', '2026-03-06 16:27:51'),
+(75, 'Thomson', NULL, 19, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772814679126_il1sl93p6/main_image/69ab01c41fb95_1772814788.png', NULL, NULL, 1, '2026-03-06 16:33:08', '2026-03-06 16:33:10'),
+(76, 'Ewellix', NULL, 19, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772814857480_y3drb8t72/main_image/69ab0223653db_1772814883.png', NULL, NULL, 1, '2026-03-06 16:34:43', '2026-03-06 16:34:43'),
+(77, 'Schneeberger', NULL, 19, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772814989429_es0lc27qx/main_image/69ab029aa2152_1772815002.png', NULL, NULL, 1, '2026-03-06 16:36:43', '2026-03-06 16:36:43'),
+(78, 'Milwaukee', NULL, 24, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772816356396_3uoxa1f8e/main_image/69ab0831cdcee_1772816433.png', NULL, NULL, 1, '2026-03-06 17:00:34', '2026-03-06 17:00:35'),
+(79, 'Morse cutting tools', NULL, 24, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772816487567_3scyqody7/main_image/69ab087db4188_1772816509.png', NULL, NULL, 1, '2026-03-06 17:01:49', '2026-03-06 17:01:50'),
+(80, 'Kyocera', NULL, 24, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772816650264_pfdctif0g/main_image/69ab092115db7_1772816673.png', NULL, NULL, 1, '2026-03-06 17:04:33', '2026-03-06 17:04:33'),
+(81, 'OSG', NULL, 24, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772816708541_1blu7dngw/main_image/69ab096d87136_1772816749.png', NULL, NULL, 1, '2026-03-06 17:05:50', '2026-03-06 17:05:50'),
+(82, 'Sandvik Coromant', NULL, 24, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772816818062_2csfk7kzh/main_image/69ab09bca440e_1772816828.png', NULL, NULL, 1, '2026-03-06 17:07:08', '2026-03-06 17:07:08'),
+(83, 'Kennametal', NULL, 24, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772816964812_v511cxki1/main_image/69ab0a5041af6_1772816976.png', NULL, NULL, 1, '2026-03-06 17:09:36', '2026-03-06 17:09:36'),
+(84, 'ISCAR', NULL, 24, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772817032911_p7scij3hg/main_image/69ab0a9517756_1772817045.png', NULL, NULL, 1, '2026-03-06 17:10:45', '2026-03-06 17:10:45'),
+(85, 'Walter Tools', NULL, 24, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772817111872_r4pj3qmmn/main_image/69ab0ae15bdcb_1772817121.png', NULL, NULL, 1, '2026-03-06 17:12:01', '2026-03-06 17:12:01'),
+(86, 'Mitsubishi Materials', NULL, 24, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772817210285_bzu8t4ma4/main_image/69ab0b44f2172_1772817220.png', NULL, NULL, 1, '2026-03-06 17:13:41', '2026-03-06 17:13:41'),
+(87, 'Makita', NULL, 17, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772817330450_r8masgtcm/main_image/69ab0c0257e68_1772817410.png', NULL, NULL, 1, '2026-03-06 17:16:50', '2026-03-06 17:16:51'),
+(88, 'Bosch Professional', NULL, 10, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772817467405_00jm1yer5/main_image/69ab0c95bb22d_1772817557.png', NULL, NULL, 1, '2026-03-06 17:19:18', '2026-03-06 17:19:18'),
+(89, 'Hilti', NULL, 10, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772817590637_9vrd3aku4/main_image/69ab0ce96d2d8_1772817641.png', NULL, NULL, 1, '2026-03-06 17:20:41', '2026-03-06 17:20:41'),
+(90, 'Truper', NULL, 10, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772817687845_mrsq4toci/main_image/69ab0d2cd5620_1772817708.png', NULL, NULL, 1, '2026-03-06 17:21:49', '2026-03-06 17:21:49'),
+(91, 'Stanley', NULL, 10, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772817806041_kj68ddpy3/main_image/69ab0d9a58dd1_1772817818.png', NULL, NULL, 1, '2026-03-06 17:23:38', '2026-03-06 17:23:39'),
+(92, 'Black+Decker', NULL, 10, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772817851571_qu8xgmmpu/main_image/69ab0dfdb99e9_1772817917.png', NULL, NULL, 1, '2026-03-06 17:25:17', '2026-03-06 17:25:18'),
+(93, 'Ryobi', NULL, 10, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772817997791_cyiyvf9uj/main_image/69ab0e5779361_1772818007.png', NULL, NULL, 1, '2026-03-06 17:26:47', '2026-03-06 17:26:47'),
+(94, 'Craftsman', NULL, 10, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772818054640_udarlxafx/main_image/69ab0e9291bd3_1772818066.png', NULL, NULL, 1, '2026-03-06 17:27:46', '2026-03-06 17:27:46'),
+(95, 'Fluke', NULL, 10, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772818267504_8s07lqil8/main_image/69ab0f6829117_1772818280.png', NULL, NULL, 1, '2026-03-06 17:31:20', '2026-03-06 17:31:20'),
+(97, 'Proto', NULL, 10, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772818460945_rfblva27c/main_image/69ab102aaf20e_1772818474.png', NULL, NULL, 1, '2026-03-06 17:34:34', '2026-03-06 17:34:34'),
+(99, 'Honeywell', NULL, 9, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772818823719_d055tgu4d/main_image/69ab1193b0a6d_1772818835.png', NULL, NULL, 1, '2026-03-06 17:40:35', '2026-03-06 17:40:36'),
+(100, 'Dodge an RBC', NULL, 14, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772818924179_whumsu4yu/main_image/69ab120c69e01_1772818956.png', NULL, NULL, 1, '2026-03-06 17:42:36', '2026-03-06 17:42:36'),
+(101, 'Sacar del centro', NULL, 8, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772819583229_oh9h3tisp/main_image/69ab14919e0cb_1772819601.png', NULL, NULL, 1, '2026-03-06 17:53:22', '2026-03-06 17:53:22'),
+(102, 'Konecranes', NULL, 8, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772819685347_85w2ik8pb/main_image/69ab14ef5af99_1772819695.png', NULL, NULL, 1, '2026-03-06 17:54:55', '2026-03-06 17:54:55'),
+(103, 'Demag', NULL, 8, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772819741226_p0e2cvibr/main_image/69ab153794430_1772819767.png', NULL, NULL, 1, '2026-03-06 17:56:07', '2026-03-06 17:56:07'),
+(104, 'Raymond', NULL, 8, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772819886487_2uj5xtxgz/main_image/69ab15b9b2589_1772819897.png', NULL, NULL, 1, '2026-03-06 17:58:18', '2026-03-06 17:58:18'),
+(105, 'Crown', NULL, 8, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772819971123_478n6ocke/main_image/69ab161b21995_1772819995.png', NULL, NULL, 1, '2026-03-06 17:59:55', '2026-03-06 17:59:55'),
+(106, 'Dayton', NULL, 8, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772820304937_tcuumq5vx/main_image/69ab175e21d3b_1772820318.png', NULL, NULL, 1, '2026-03-06 18:05:18', '2026-03-06 18:05:18'),
+(107, 'Urrea', NULL, 10, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772820335041_nnerh00dy/main_image/69ab17a9307bf_1772820393.png', NULL, NULL, 1, '2026-03-06 18:06:33', '2026-03-06 18:06:33'),
+(108, 'Surtek', NULL, 10, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772820418418_z513kcwy6/main_image/69ab17f375d0f_1772820467.png', NULL, NULL, 1, '2026-03-06 18:07:47', '2026-03-06 18:07:47'),
+(109, 'Southworth', NULL, 8, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772820573894_2fti1qo4b/main_image/69ab186809fae_1772820584.png', NULL, NULL, 1, '2026-03-06 18:09:44', '2026-03-06 18:09:44'),
+(110, 'Bishamon', NULL, 8, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772820630812_vv7m9t002/main_image/69ab18a09689d_1772820640.png', NULL, NULL, 1, '2026-03-06 18:10:40', '2026-03-06 18:10:40'),
+(111, 'Columbus McKinnon', NULL, 8, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772820678612_46wspzuyd/main_image/69ab18d054b6d_1772820688.png', NULL, NULL, 1, '2026-03-06 18:11:28', '2026-03-06 18:11:28'),
+(112, 'Harrington Hoists', NULL, 8, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772820791173_woge91eer/main_image/69ab19420a27d_1772820802.png', NULL, NULL, 1, '2026-03-06 18:13:22', '2026-03-06 18:13:22'),
+(113, 'WEG', NULL, 23, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772820954834_b96l4bjg6/main_image/69ab19e9eabcf_1772820969.png', NULL, NULL, 1, '2026-03-06 18:16:10', '2026-03-06 18:16:10'),
+(115, 'Siemens', NULL, 23, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772821028698_srymbir8h/main_image/69ab1a2d878ba_1772821037.png', NULL, NULL, 1, '2026-03-06 18:17:17', '2026-03-06 18:17:17'),
+(116, 'ABB', NULL, 23, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772821048329_jykfzrpc3/main_image/69ab1a7821258_1772821112.png', NULL, NULL, 1, '2026-03-06 18:18:32', '2026-03-06 18:18:32'),
+(117, 'Baldor-Reliance (ABB)', NULL, 23, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772821597030_ixr1k2eml/main_image/69ab1ccdcfc40_1772821709.png', NULL, NULL, 1, '2026-03-06 18:28:30', '2026-03-06 18:28:30'),
+(118, 'US Motors (Nidec)', NULL, 23, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772821769168_lkeh8lokl/main_image/69ab1d47ce920_1772821831.png', NULL, NULL, 1, '2026-03-06 18:30:33', '2026-03-06 18:30:33'),
+(119, 'Leeson', NULL, 23, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772821978941_80egpelpg/main_image/69ab1deb4bfc8_1772821995.png', NULL, NULL, 1, '2026-03-06 18:33:15', '2026-03-06 18:33:15'),
+(120, 'Marathon Motors', NULL, 23, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772822163299_4ixgc67lo/main_image/69ab1e9e664a5_1772822174.png', NULL, NULL, 1, '2026-03-06 18:36:14', '2026-03-06 18:36:14'),
+(121, 'Bodine Electric', NULL, 23, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772822215773_jjir84tn7/main_image/69ab1ede98926_1772822238.png', NULL, NULL, 1, '2026-03-06 18:37:18', '2026-03-06 18:37:18'),
+(122, 'Bison Gear & Engineering', NULL, 23, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772822322067_x61qhiai1/main_image/69ab1f42b5bb7_1772822338.png', NULL, NULL, 1, '2026-03-06 18:38:58', '2026-03-06 18:38:58'),
+(123, 'General_Electric', NULL, 23, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772822488183_mw8alz77k/main_image/69ab1fe1b7c08_1772822497.png', NULL, NULL, 1, '2026-03-06 18:41:37', '2026-03-06 18:41:38'),
+(124, 'SEW-EURODRIVE', NULL, 23, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772822542710_utcygtnpb/main_image/69ab20254840e_1772822565.png', NULL, NULL, 1, '2026-03-06 18:42:45', '2026-03-06 18:42:45'),
+(125, 'Sumitomo', NULL, 23, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772822640042_sjeuvio1z/main_image/69ab207fa205e_1772822655.png', NULL, NULL, 1, '2026-03-06 18:44:15', '2026-03-06 18:44:15'),
+(126, 'Nord Drivesystems', NULL, 23, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772822698607_49v8da1jf/main_image/69ab20b43c05f_1772822708.png', NULL, NULL, 1, '2026-03-06 18:45:08', '2026-03-06 18:45:08'),
+(127, 'Bonfiglioli', NULL, 23, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772822792397_p3mwlaish/main_image/69ab212fc7a0e_1772822831.png', NULL, NULL, 1, '2026-03-06 18:47:12', '2026-03-06 18:47:12'),
+(128, 'NTN', NULL, 7, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772822954039_vneq2nmq8/main_image/69ab21cdbcec2_1772822989.png', NULL, NULL, 1, '2026-03-06 18:49:49', '2026-03-06 18:49:50'),
+(129, 'Koyo JTEKT', NULL, 7, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772823135761_vizllzf1h/main_image/69ab227bb3e72_1772823163.png', NULL, NULL, 1, '2026-03-06 18:52:43', '2026-03-06 18:52:44'),
+(130, 'Regal Rexnord', NULL, 19, NULL, NULL, '/data/industrial_catalogue/brand_temp_1772823263124_76yy1ypn4/main_image/69ab231399f11_1772823315.png', NULL, NULL, 1, '2026-03-06 18:55:15', '2026-03-06 18:55:15'),
+(131, 'Miller Electric', NULL, 25, NULL, NULL, '/data/industrial_catalogue/brand_temp_1773090083892_41g0zb3zc/main_image/69af35354ce79_1773090101.png', NULL, NULL, 1, '2026-03-09 21:01:41', '2026-03-09 21:01:42'),
+(132, 'Lincoln Electric', NULL, 25, NULL, NULL, '/data/industrial_catalogue/brand_temp_1773090149833_lfhof03gn/main_image/69af3582c4cc0_1773090178.png', NULL, NULL, 1, '2026-03-09 21:02:59', '2026-03-09 21:02:59'),
+(133, 'ESAB', NULL, 25, NULL, NULL, '/data/industrial_catalogue/brand_temp_1773090219221_xerp0j1h7/main_image/69af35b65802c_1773090230.png', NULL, NULL, 1, '2026-03-09 21:03:50', '2026-03-09 21:03:50'),
+(134, 'Fronius', NULL, 25, NULL, NULL, '/data/industrial_catalogue/brand_temp_1773090286890_f4l30ztzt/main_image/69af361db3a2c_1773090333.png', NULL, NULL, 1, '2026-03-09 21:05:33', '2026-03-09 21:05:34'),
+(135, 'Hobart', NULL, 25, NULL, NULL, '/data/industrial_catalogue/brand_temp_1773090436804_pjvnkxcum/main_image/69af369052d30_1773090448.png', NULL, NULL, 1, '2026-03-09 21:07:28', '2026-03-09 21:07:29'),
+(136, '3M Speedglas', NULL, 25, NULL, NULL, '/data/industrial_catalogue/brand_temp_1773090515584_ii6ol3h8i/main_image/69af36dd5e6c6_1773090525.png', NULL, NULL, 1, '2026-03-09 21:08:45', '2026-03-09 21:08:45'),
+(137, 'Black Stallion', NULL, 25, NULL, NULL, '/data/industrial_catalogue/brand_temp_1773090598829_4fg9ou6l1/main_image/69af3730e0ed8_1773090608.png', NULL, NULL, 1, '2026-03-09 21:10:09', '2026-03-09 21:10:09'),
+(138, 'AXT', NULL, 25, NULL, NULL, '/data/industrial_catalogue/brand_temp_1773090704621_ltnx1gtro/main_image/69af37a588d39_1773090725.png', NULL, NULL, 1, '2026-03-09 21:12:05', '2026-03-09 21:12:05'),
+(139, 'Waukesha', NULL, 22, NULL, NULL, '/data/industrial_catalogue/brand_temp_1773091937024_k0fl0jj3j/main_image/69af3c7dcb650_1773091965.png', NULL, NULL, 1, '2026-03-09 21:32:46', '2026-03-09 21:32:46'),
+(140, 'Wacker Neuson', NULL, 22, NULL, NULL, '/data/industrial_catalogue/brand_temp_1773092075442_njy2b17vi/main_image/69af3d044f32d_1773092100.png', NULL, NULL, 1, '2026-03-09 21:35:00', '2026-03-09 21:35:00'),
+(141, 'Triumph', NULL, 18, NULL, NULL, '/data/industrial_catalogue/brand_temp_1773092339863_8skdjw6wz/main_image/69af3e09152c8_1773092361.png', NULL, NULL, 1, '2026-03-09 21:39:21', '2026-03-09 21:39:21'),
+(142, 'DermaCare', NULL, 12, NULL, NULL, '/data/industrial_catalogue/brand_temp_1773105083205_lyg7g97dy/main_image/69af6fe0bd8c7_1773105120.png', NULL, NULL, 1, '2026-03-10 01:12:02', '2026-03-10 01:12:02');
 
 -- --------------------------------------------------------
 
@@ -208,19 +315,166 @@ CREATE TABLE `brand_categories` (
 --
 
 INSERT INTO `brand_categories` (`brand_id`, `category_id`, `created_at`) VALUES
-(9, 7, '2026-02-25 22:54:34'),
-(10, 7, '2026-02-25 22:54:34'),
-(11, 8, '2026-02-25 22:54:34'),
-(12, 7, '2026-02-25 22:59:49'),
-(12, 8, '2026-02-25 22:59:49'),
-(13, 8, '2026-02-25 22:54:34'),
-(14, 17, '2026-02-25 22:59:35'),
-(14, 18, '2026-02-25 22:59:35'),
-(15, 9, '2026-02-25 22:59:42'),
-(15, 10, '2026-02-25 22:59:42'),
-(17, 7, '2026-02-25 22:57:24'),
-(17, 8, '2026-02-25 22:57:24'),
-(17, 17, '2026-02-25 22:57:24');
+(9, 7, '2026-02-26 16:41:57'),
+(15, 7, '2026-02-26 15:37:23'),
+(17, 12, '2026-03-06 15:46:56'),
+(17, 20, '2026-03-06 15:46:56'),
+(17, 21, '2026-03-06 15:46:56'),
+(19, 18, '2026-03-02 22:45:07'),
+(20, 18, '2026-03-02 22:48:33'),
+(21, 9, '2026-03-02 23:01:35'),
+(21, 18, '2026-03-02 23:01:35'),
+(23, 18, '2026-03-02 22:54:33'),
+(24, 18, '2026-03-02 22:57:40'),
+(26, 9, '2026-03-02 23:03:27'),
+(27, 9, '2026-03-02 23:05:29'),
+(28, 9, '2026-03-02 23:07:40'),
+(29, 9, '2026-03-02 23:08:36'),
+(30, 9, '2026-03-02 23:09:42'),
+(31, 9, '2026-03-02 23:12:36'),
+(31, 23, '2026-03-02 23:12:36'),
+(32, 9, '2026-03-02 23:13:51'),
+(33, 9, '2026-03-02 23:15:40'),
+(34, 9, '2026-03-02 23:19:20'),
+(34, 14, '2026-03-02 23:19:20'),
+(35, 14, '2026-03-02 23:20:21'),
+(37, 8, '2026-03-02 23:24:55'),
+(37, 14, '2026-03-02 23:24:55'),
+(38, 14, '2026-03-02 23:25:46'),
+(39, 14, '2026-03-02 23:26:33'),
+(41, 14, '2026-03-02 23:28:46'),
+(42, 21, '2026-03-06 15:26:54'),
+(43, 21, '2026-03-06 15:28:08'),
+(44, 21, '2026-03-06 15:29:34'),
+(45, 21, '2026-03-06 15:30:22'),
+(46, 21, '2026-03-06 15:32:06'),
+(47, 10, '2026-03-06 15:38:41'),
+(47, 12, '2026-03-06 15:38:41'),
+(47, 17, '2026-03-06 15:38:41'),
+(47, 20, '2026-03-06 15:38:41'),
+(47, 24, '2026-03-06 15:38:41'),
+(49, 20, '2026-03-06 15:42:27'),
+(50, 20, '2026-03-06 15:43:31'),
+(51, 20, '2026-03-06 15:44:41'),
+(52, 20, '2026-03-06 15:46:38'),
+(53, 20, '2026-03-06 15:49:48'),
+(53, 21, '2026-03-06 15:49:48'),
+(54, 22, '2026-03-06 15:55:46'),
+(55, 22, '2026-03-06 15:56:59'),
+(63, 22, '2026-03-06 16:06:48'),
+(64, 22, '2026-03-06 16:07:57'),
+(65, 22, '2026-03-06 16:08:36'),
+(66, 22, '2026-03-06 16:10:42'),
+(67, 22, '2026-03-06 16:11:58'),
+(68, 22, '2026-03-06 16:14:05'),
+(69, 19, '2026-03-06 16:15:53'),
+(70, 7, '2026-03-06 16:17:34'),
+(70, 14, '2026-03-06 16:17:34'),
+(70, 19, '2026-03-06 16:17:34'),
+(70, 23, '2026-03-06 16:17:34'),
+(72, 7, '2026-03-06 16:20:30'),
+(72, 19, '2026-03-06 16:20:30'),
+(73, 7, '2026-03-06 16:23:24'),
+(73, 14, '2026-03-06 16:23:24'),
+(73, 19, '2026-03-06 16:23:24'),
+(74, 9, '2026-03-06 16:27:51'),
+(74, 19, '2026-03-06 16:27:51'),
+(75, 7, '2026-03-06 16:33:10'),
+(75, 9, '2026-03-06 16:33:10'),
+(75, 14, '2026-03-06 16:33:10'),
+(75, 19, '2026-03-06 16:33:10'),
+(75, 23, '2026-03-06 16:33:10'),
+(76, 19, '2026-03-06 16:34:43'),
+(77, 19, '2026-03-06 16:36:43'),
+(78, 10, '2026-03-06 17:00:34'),
+(78, 17, '2026-03-06 17:00:34'),
+(78, 24, '2026-03-06 17:00:34'),
+(79, 24, '2026-03-06 17:01:49'),
+(80, 24, '2026-03-06 17:04:33'),
+(81, 24, '2026-03-06 17:05:50'),
+(82, 24, '2026-03-06 17:07:08'),
+(83, 24, '2026-03-06 17:09:36'),
+(84, 24, '2026-03-06 17:10:45'),
+(85, 24, '2026-03-06 17:12:01'),
+(86, 24, '2026-03-06 17:13:41'),
+(87, 10, '2026-03-06 17:16:50'),
+(87, 17, '2026-03-06 17:16:50'),
+(87, 22, '2026-03-06 17:16:50'),
+(88, 10, '2026-03-06 17:19:18'),
+(88, 17, '2026-03-06 17:19:18'),
+(88, 20, '2026-03-06 17:19:18'),
+(88, 24, '2026-03-06 17:19:18'),
+(89, 10, '2026-03-06 17:20:41'),
+(89, 17, '2026-03-06 17:20:41'),
+(90, 10, '2026-03-06 17:21:49'),
+(90, 17, '2026-03-06 17:21:49'),
+(91, 10, '2026-03-06 17:23:38'),
+(91, 17, '2026-03-06 17:23:38'),
+(92, 10, '2026-03-06 17:25:17'),
+(92, 17, '2026-03-06 17:25:18'),
+(93, 10, '2026-03-06 17:26:47'),
+(94, 10, '2026-03-06 17:27:46'),
+(94, 17, '2026-03-06 17:27:46'),
+(95, 10, '2026-03-06 17:31:20'),
+(97, 10, '2026-03-06 17:34:34'),
+(97, 17, '2026-03-06 17:34:34'),
+(99, 9, '2026-03-06 17:40:35'),
+(99, 12, '2026-03-06 17:40:36'),
+(99, 18, '2026-03-06 17:40:36'),
+(100, 7, '2026-03-06 17:42:36'),
+(100, 14, '2026-03-06 17:42:36'),
+(101, 8, '2026-03-06 17:53:22'),
+(102, 8, '2026-03-06 17:54:55'),
+(103, 8, '2026-03-06 17:56:07'),
+(104, 8, '2026-03-06 17:58:18'),
+(105, 8, '2026-03-06 17:59:55'),
+(106, 8, '2026-03-06 18:05:18'),
+(107, 8, '2026-03-06 18:06:33'),
+(107, 10, '2026-03-06 18:06:33'),
+(107, 17, '2026-03-06 18:06:33'),
+(108, 8, '2026-03-06 18:07:47'),
+(108, 10, '2026-03-06 18:07:47'),
+(108, 17, '2026-03-06 18:07:47'),
+(109, 8, '2026-03-06 18:09:44'),
+(110, 8, '2026-03-06 18:10:40'),
+(111, 8, '2026-03-06 18:11:28'),
+(112, 8, '2026-03-06 18:13:22'),
+(113, 23, '2026-03-06 18:16:10'),
+(115, 23, '2026-03-06 18:17:17'),
+(116, 23, '2026-03-06 18:18:32'),
+(117, 22, '2026-03-06 18:28:30'),
+(117, 23, '2026-03-06 18:28:30'),
+(118, 23, '2026-03-06 18:30:33'),
+(119, 23, '2026-03-06 18:33:15'),
+(120, 23, '2026-03-06 18:36:14'),
+(121, 23, '2026-03-06 18:37:18'),
+(122, 23, '2026-03-06 18:38:58'),
+(123, 23, '2026-03-06 18:41:38'),
+(124, 23, '2026-03-06 18:42:45'),
+(125, 23, '2026-03-06 18:44:15'),
+(126, 23, '2026-03-06 18:45:08'),
+(127, 23, '2026-03-06 18:47:12'),
+(128, 7, '2026-03-06 18:49:50'),
+(128, 14, '2026-03-06 18:49:50'),
+(128, 19, '2026-03-06 18:49:50'),
+(129, 7, '2026-03-06 18:52:44'),
+(130, 7, '2026-03-06 18:55:15'),
+(130, 14, '2026-03-06 18:55:15'),
+(130, 19, '2026-03-06 18:55:15'),
+(130, 23, '2026-03-06 18:55:15'),
+(131, 25, '2026-03-09 21:01:42'),
+(132, 25, '2026-03-09 21:02:59'),
+(133, 25, '2026-03-09 21:03:50'),
+(134, 25, '2026-03-09 21:05:34'),
+(135, 25, '2026-03-09 21:07:28'),
+(136, 25, '2026-03-09 21:08:45'),
+(137, 25, '2026-03-09 21:10:09'),
+(138, 25, '2026-03-09 21:12:05'),
+(139, 22, '2026-03-09 21:32:46'),
+(140, 22, '2026-03-09 21:35:00'),
+(141, 18, '2026-03-09 21:39:21'),
+(142, 12, '2026-03-10 01:12:02'),
+(142, 25, '2026-03-10 01:12:02');
 
 -- --------------------------------------------------------
 
@@ -254,11 +508,15 @@ INSERT INTO `categories` (`id`, `name`, `description`, `slug`, `main_image`, `ex
 (10, 'Herramientas electricas', '', 'herramientas-electricas', '/data/industrial_catalogue/cat_10/main_image/699e57003483b_1771984640.jpg', NULL, NULL, 0, 1, '2026-01-07 22:00:03', '2026-02-25 01:57:20'),
 (12, 'Seguridad Industrial (EPP)', '', 'seguridad-industrial', '/data/industrial_catalogue/cat_12/main_image/699e4f190d33e_1771982617.jpg', NULL, NULL, 0, 1, '2026-01-07 22:01:06', '2026-02-25 01:23:45'),
 (14, 'Transmisión de potencia', '', 'transmisi-n-de-potencia', '/data/industrial_catalogue/cat_14/main_image/699cd98f5f6e8_1771886991.jpg', NULL, NULL, 0, 1, '2026-01-07 22:02:10', '2026-02-23 22:49:51'),
-(17, 'Herramientas manuales', NULL, 'herramientas-manuales', '/data/industrial_catalogue/cat_temp_1771264430399_nmkcgysuc/main_image/69935a334b938_1771264563.jpg', NULL, NULL, 0, 1, '2026-02-16 17:56:03', '2026-02-16 17:56:03'),
+(17, 'Herramientas manuales', '', 'herramientas-manuales', '/data/industrial_catalogue/cat_17/main_image/69a1be5e65dd8_1772207710.jpg', NULL, NULL, 0, 1, '2026-02-16 17:56:03', '2026-02-27 15:55:10'),
 (18, 'Neumática', NULL, 'neum-tica', '/data/industrial_catalogue/cat_temp_1771871402313_zh817cwlq/main_image/699c9cbe87d25_1771871422.jpg', NULL, NULL, 0, 1, '2026-02-23 18:30:22', '2026-02-23 18:30:22'),
 (19, 'Guias lineales', NULL, 'guias-lineales', '/data/industrial_catalogue/cat_temp_1771889961040_gf32gvouw/main_image/699ce561cc2ae_1771890017.jpg', NULL, NULL, 0, 1, '2026-02-23 23:40:18', '2026-02-23 23:40:18'),
 (20, 'Abrasivos', NULL, 'abrasivos', '/data/industrial_catalogue/cat_temp_1771890865786_s5jcb7h0p/main_image/699ce8bf1167e_1771890879.jpeg', NULL, NULL, 0, 1, '2026-02-23 23:54:39', '2026-02-23 23:54:39'),
-(21, 'Adhesivos', NULL, 'adhesivos', '/data/industrial_catalogue/cat_temp_1771891696479_c83i4u4n1/main_image/699cec07f1942_1771891719.jpg', NULL, NULL, 0, 1, '2026-02-24 00:08:40', '2026-02-24 00:08:40');
+(21, 'Adhesivos', NULL, 'adhesivos', '/data/industrial_catalogue/cat_temp_1771891696479_c83i4u4n1/main_image/699cec07f1942_1771891719.jpg', NULL, NULL, 0, 1, '2026-02-24 00:08:40', '2026-02-24 00:08:40'),
+(22, 'Bombas', NULL, 'bombas', '/data/industrial_catalogue/cat_temp_1772210976185_nfgtav2ga/main_image/69a1cb3ac65ee_1772211002.jpg', NULL, NULL, 0, 1, '2026-02-27 16:50:03', '2026-02-27 16:50:03'),
+(23, 'Motores', NULL, 'motores', '/data/industrial_catalogue/cat_temp_1772212681899_1l6z5sp89/main_image/69a1d5d469f4c_1772213716.jpg', NULL, NULL, 0, 1, '2026-02-27 17:35:16', '2026-02-27 17:35:16'),
+(24, 'Herramientas de corte', NULL, 'herramientas-de-corte', '/data/industrial_catalogue/cat_temp_1772214952578_3pvx8sxst/main_image/69a1dab940194_1772214969.jpg', NULL, NULL, 0, 1, '2026-02-27 17:56:09', '2026-02-27 17:56:09'),
+(25, 'Soldadura', NULL, 'soldadura', '/data/industrial_catalogue/cat_temp_1772216903034_atikqja71/main_image/69a1e27ab1b9f_1772216954.jpg', NULL, NULL, 0, 1, '2026-02-27 18:29:14', '2026-02-27 18:29:14');
 
 -- --------------------------------------------------------
 
@@ -380,6 +638,36 @@ INSERT INTO `faq_items` (`id`, `category_id`, `question`, `answer`, `sort_order`
 (18, 5, '¿Realizan entregas en toda la República Mexicana?', 'Sí, atendemos clientes en todo México. Los costos y tiempos de envío se calculan según la ubicación de destino y el tipo de producto.', 2, 1, NULL, '2026-02-15 23:42:05', '2026-02-15 23:42:05'),
 (19, 5, '¿Cómo rastreo mi pedido?', 'Una vez confirmado tu pedido, te proporcionamos información de seguimiento para que puedas monitorear el estado de tu entrega hasta su llegada a destino.', 3, 1, NULL, '2026-02-15 23:42:05', '2026-02-15 23:42:05'),
 (20, 5, '¿Manejan entregas urgentes?', 'Sí, entendemos las necesidades operativas de la industria y trabajamos para atender requerimientos urgentes cuando la disponibilidad del producto lo permite.', 4, 1, NULL, '2026-02-15 23:42:05', '2026-02-15 23:42:05');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `hero_carousel_slides`
+--
+
+CREATE TABLE `hero_carousel_slides` (
+  `id` int(11) NOT NULL,
+  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `subtitle` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `background_image` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cta_text` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT 'Ver Catálogo',
+  `cta_link` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT '/catalog',
+  `sort_order` int(11) NOT NULL DEFAULT '0',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `hero_carousel_slides`
+--
+
+INSERT INTO `hero_carousel_slides` (`id`, `title`, `subtitle`, `description`, `background_image`, `cta_text`, `cta_link`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'Donde la Calidad', 'Encuentra la Innovación', 'Herramientas profesionales, equipamiento industrial y componentes de precisión para transformar tu negocio', 'https://disruptinglabs.com/data/api/data/industrial_catalogue/images/pexels-vladimirsrajber-18631420.jpg', 'Ver Catálogo', '/catalog', 1, 1, '2026-03-11 02:09:28', '2026-03-11 02:11:43'),
+(2, 'Potencia Industrial', 'Sin Límites', 'Sistemas de transmisión de potencia, automatización y control industrial para maximizar la productividad de tu empresa', 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80', 'Ver Catálogo', '/catalog', 2, 1, '2026-03-11 02:09:28', '2026-03-11 02:11:46'),
+(3, 'Precisión Técnica', 'Resultados Excepcionales', 'Sistemas neumáticos, hidráulicos y herramientas especializadas diseñadas para cada aplicación industrial específica', 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80', 'Ver Catálogo', '/catalog', 3, 1, '2026-03-11 02:09:28', '2026-03-11 02:11:57'),
+(4, 'Seguridad Industrial', 'Primera Prioridad', 'Equipos certificados y suministros industriales que garantizan operaciones seguras y cumplimiento normativo', 'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80', 'Ver Catálogo', '/catalog', 4, 1, '2026-03-11 02:09:28', '2026-03-11 02:11:49');
 
 -- --------------------------------------------------------
 
@@ -536,8 +824,8 @@ CREATE TABLE `quotes` (
 --
 
 INSERT INTO `quotes` (`id`, `quote_number`, `customer_name`, `customer_email`, `customer_phone`, `customer_company`, `customer_message`, `brand`, `product_type`, `part_number`, `specifications`, `quantity`, `city_state`, `preferred_contact_method`, `brand_id`, `manufacturer_id`, `category_id`, `subcategory_id`, `status`, `total_items`, `notes`, `created_at`, `updated_at`) VALUES
-(5, 'Q-1771206431169-120', 'Bryan', 'ing.bryanpadilla@gmail.com', '4747299634', 'Stl', NULL, 'ABB', 'Motor electrico', 'S2R', NULL, 1, 'Leon', 'whatsapp', 11, NULL, 8, NULL, 'pending', 0, NULL, '2026-02-16 01:47:11', '2026-02-16 01:47:11'),
-(6, 'Q-1771611813566-953', 'Bryan Padillq', 'bryan.chelo.bp@gmail.com', '4747299634', 'Trenor', NULL, '3M', 'Lentes', NULL, NULL, 1, 'León', 'phone', 17, NULL, 12, NULL, 'pending', 0, NULL, '2026-02-20 18:23:33', '2026-02-20 18:23:33');
+(5, 'Q-1771206431169-120', 'Bryan', 'ing.bryanpadilla@gmail.com', '4747299634', 'Stl', NULL, 'ABB', 'Motor electrico', 'S2R', NULL, 1, 'Leon', 'whatsapp', 11, NULL, 8, NULL, 'accepted', 0, NULL, '2026-02-16 01:47:11', '2026-02-27 16:41:27'),
+(6, 'Q-1771611813566-953', 'Bryan Padillq', 'bryan.chelo.bp@gmail.com', '4747299634', 'Trenor', NULL, '3M', 'Lentes', NULL, NULL, 1, 'León', 'phone', 17, NULL, 12, NULL, 'accepted', 0, NULL, '2026-02-20 18:23:33', '2026-02-27 16:41:24');
 
 -- --------------------------------------------------------
 
@@ -637,7 +925,29 @@ INSERT INTO `subcategories` (`id`, `name`, `slug`, `description`, `category_id`,
 (70, 'Taladros', 'taladros', NULL, 10, '/data/industrial_catalogue/sub_temp_1771984654581_t7sg5v0ta/main_image/699e578908a13_1771984777.jpg', NULL, 1, '2026-02-25 01:59:37', '2026-02-25 01:59:37'),
 (71, 'Herramientas para acabados', 'herramientas-para-acabados', NULL, 10, '/data/industrial_catalogue/sub_temp_1771984973105_7t6izy7vn/main_image/699e586856277_1771985000.jpg', NULL, 1, '2026-02-25 02:03:20', '2026-02-25 02:03:20'),
 (72, 'Herramientas electricas para cable y alambre', 'herramientas-electricas-para-cable-y-alambre', NULL, 10, '/data/industrial_catalogue/sub_temp_1771985204208_0fihj8vb4/main_image/699e594a6d3d4_1771985226.jpg', NULL, 1, '2026-02-25 02:07:06', '2026-02-25 02:07:06'),
-(73, 'Pistolas de calor', 'pistolas-de-calor', NULL, 10, '/data/industrial_catalogue/sub_temp_1771985349205_4lvcrxr5r/main_image/699e59dcd1d5c_1771985372.jpg', NULL, 1, '2026-02-25 02:09:33', '2026-02-25 02:09:33');
+(73, 'Pistolas de calor', 'pistolas-de-calor', NULL, 10, '/data/industrial_catalogue/sub_temp_1771985349205_4lvcrxr5r/main_image/699e59dcd1d5c_1771985372.jpg', NULL, 1, '2026-02-25 02:09:33', '2026-02-25 02:09:33'),
+(74, 'Pinzas', 'pinzas', NULL, 17, '/data/industrial_catalogue/sub_temp_1772208572791_g10eboo4d/main_image/69a1c1cf076d5_1772208591.jpg', NULL, 1, '2026-02-27 16:09:52', '2026-02-27 16:09:52'),
+(75, 'Llaves', 'llaves', '', 17, '/data/industrial_catalogue/sub_75/main_image/69a1c7287f325_1772209960.jpg', NULL, 1, '2026-02-27 16:29:49', '2026-02-27 16:32:40'),
+(76, 'Martillos y herramientas de golpeo', 'martillos-y-herramientas-de-golpeo', NULL, 17, '/data/industrial_catalogue/sub_temp_1772210175807_lm9b4j1dr/main_image/69a1c81d93ea7_1772210205.jpg', NULL, 1, '2026-02-27 16:36:45', '2026-02-27 16:36:45'),
+(77, 'Almacenamiento de herramientas', 'almacenamiento-de-herramientas', NULL, 17, '/data/industrial_catalogue/sub_temp_1772210413511_v1fhdte3p/main_image/69a1c90439966_1772210436.jpg', NULL, 1, '2026-02-27 16:40:36', '2026-02-27 16:40:36'),
+(78, 'Bombas centrifugas', 'bombas-centrifugas', NULL, 22, '/data/industrial_catalogue/sub_temp_1772211213936_istcowl37/main_image/69a1cc25534a4_1772211237.jpg', NULL, 1, '2026-02-27 16:53:57', '2026-02-27 16:53:57'),
+(79, 'Bombas de prueba hidrostaticas', 'bombas-de-prueba-hidrostaticas', NULL, 22, '/data/industrial_catalogue/sub_temp_1772211771568_ydoyd4zk9/main_image/69a1ce8eef659_1772211854.jpg', NULL, 1, '2026-02-27 17:04:15', '2026-02-27 17:04:15'),
+(80, 'Bombas de diafragma', 'bombas-de-diafragma', NULL, 22, '/data/industrial_catalogue/sub_temp_1772212273553_yj690ltj3/main_image/69a1d05286d9e_1772212306.jpg', NULL, 1, '2026-02-27 17:11:47', '2026-02-27 17:11:47'),
+(81, 'Bombas de desplazamiento positivo', 'bombas-de-desplazamiento-positivo', NULL, 22, '/data/industrial_catalogue/sub_temp_1772212475315_60es1k635/main_image/69a1d133769f1_1772212531.jpg', NULL, 1, '2026-02-27 17:15:32', '2026-02-27 17:15:32'),
+(82, 'Motores DC', 'motores-dc', NULL, 23, '/data/industrial_catalogue/sub_temp_1772213905676_mcjpqzfdm/main_image/69a1d6a5bde2d_1772213925.jpg', NULL, 1, '2026-02-27 17:38:46', '2026-02-27 17:38:46'),
+(83, 'Motores AC', 'motores-ac', NULL, 23, '/data/industrial_catalogue/sub_temp_1772213991150_6wrcaecfn/main_image/69a1d717823b2_1772214039.jpg', NULL, 1, '2026-02-27 17:40:39', '2026-02-27 17:40:39'),
+(84, 'Motores de engranajes de CA', 'motores-de-engranajes-de-ca', NULL, 23, '/data/industrial_catalogue/sub_temp_1772214409021_i0dg075iv/main_image/69a1d8ab80e56_1772214443.jpg', NULL, 1, '2026-02-27 17:47:24', '2026-02-27 17:47:24'),
+(85, 'Motores de engranajes de DC', 'motores-de-engranajes-de-dc', NULL, 23, '/data/industrial_catalogue/sub_temp_1772214540670_of8e5nbc9/main_image/69a1d9272898f_1772214567.jpg', NULL, 1, '2026-02-27 17:49:27', '2026-02-27 17:49:27'),
+(86, 'Fresado', 'fresado', NULL, 24, '/data/industrial_catalogue/sub_temp_1772215311375_cehnjj9jw/main_image/69a1dc21b481c_1772215329.jpg', NULL, 1, '2026-02-27 18:02:10', '2026-02-27 18:02:10'),
+(87, 'Taladrado', 'taladrado', NULL, 24, '/data/industrial_catalogue/sub_temp_1772215446520_9wwgeqtj3/main_image/69a1dca816e38_1772215464.jpg', NULL, 1, '2026-02-27 18:04:24', '2026-02-27 18:04:24'),
+(88, 'Insertos de torneado de roscas', 'insertos-de-torneado-de-roscas', NULL, 24, '/data/industrial_catalogue/sub_temp_1772215719446_kt5q5ddk3/main_image/69a1ddb547d0d_1772215733.jpg', NULL, 1, '2026-02-27 18:08:53', '2026-02-27 18:08:53'),
+(89, 'Hojas de sierra', 'hojas-de-sierra', NULL, 24, '/data/industrial_catalogue/sub_temp_1772216004174_1oi3lslpy/main_image/69a1deea00db2_1772216042.jpg', NULL, 1, '2026-02-27 18:14:02', '2026-02-27 18:14:02'),
+(90, 'Soldadoras MIG y accesorios', 'soldadoras-mig-y-accesorios', '', 25, '/data/industrial_catalogue/sub_temp_1772217361408_oei7y2t1p/main_image/69a1e43cd7ce4_1772217404.jpg', NULL, 1, '2026-02-27 18:36:45', '2026-02-27 18:54:17'),
+(91, 'Soldadoras TIG y accesorios', 'soldadoras-tig-y-accesorios', '', 25, '/data/industrial_catalogue/sub_temp_1772217447944_l135qznab/main_image/69a1e50f3e1de_1772217615.jpg', NULL, 1, '2026-02-27 18:40:15', '2026-02-27 18:54:27'),
+(92, 'Sopletes para soldadura MIG', 'sopletes-para-soldadura-mig', '', 25, '/data/industrial_catalogue/sub_temp_1772217720505_czd6ida30/main_image/69a1e5a11eaf9_1772217761.jpg', NULL, 1, '2026-02-27 18:42:41', '2026-02-27 18:46:50'),
+(93, 'Sopletes para soldadura TIG', 'sopletes-para-soldadura-tig', NULL, 25, '/data/industrial_catalogue/sub_temp_1772217851200_3u2jojlpi/main_image/69a1e685edfd1_1772217989.jpg', NULL, 1, '2026-02-27 18:46:30', '2026-02-27 18:46:30'),
+(94, 'Soldadoras por arco y accesorios', 'soldadoras-por-arco-y-accesorios', NULL, 25, '/data/industrial_catalogue/sub_temp_1772218360427_6mux8kpjf/main_image/69a1e843d27fb_1772218435.jpg', NULL, 1, '2026-02-27 18:53:56', '2026-02-27 18:53:56'),
+(95, 'Caretas para soldar', 'caretas-para-soldar', NULL, 25, '/data/industrial_catalogue/sub_temp_1772218709306_u7escs7mk/main_image/69a1e96c31d7a_1772218732.jpg', NULL, 1, '2026-02-27 18:58:52', '2026-02-27 18:58:52');
 
 -- --------------------------------------------------------
 
@@ -755,6 +1065,14 @@ ALTER TABLE `faq_items`
   ADD KEY `fk_faq_created_by` (`created_by`);
 
 --
+-- Indexes for table `hero_carousel_slides`
+--
+ALTER TABLE `hero_carousel_slides`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_is_active` (`is_active`),
+  ADD KEY `idx_sort_order` (`sort_order`);
+
+--
 -- Indexes for table `manufacturers`
 --
 ALTER TABLE `manufacturers`
@@ -848,31 +1166,31 @@ ALTER TABLE `support_responses`
 -- AUTO_INCREMENT for table `admins`
 --
 ALTER TABLE `admins`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `admin_notifications`
 --
 ALTER TABLE `admin_notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT for table `admin_sessions`
 --
 ALTER TABLE `admin_sessions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
 
 --
 -- AUTO_INCREMENT for table `brands`
 --
 ALTER TABLE `brands`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=143;
 
 --
 -- AUTO_INCREMENT for table `categories`
 --
 ALTER TABLE `categories`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT for table `contact_submissions`
@@ -897,6 +1215,12 @@ ALTER TABLE `faq_categories`
 --
 ALTER TABLE `faq_items`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+
+--
+-- AUTO_INCREMENT for table `hero_carousel_slides`
+--
+ALTER TABLE `hero_carousel_slides`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `manufacturers`
@@ -938,7 +1262,7 @@ ALTER TABLE `quote_items`
 -- AUTO_INCREMENT for table `subcategories`
 --
 ALTER TABLE `subcategories`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=96;
 
 --
 -- AUTO_INCREMENT for table `support_responses`

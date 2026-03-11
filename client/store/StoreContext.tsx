@@ -14,6 +14,7 @@ import {
   manufacturersApi,
   brandsApi,
   modelsApi,
+  homeApi,
 } from "../services/api.service";
 import { AxiosError } from "axios";
 
@@ -32,6 +33,7 @@ interface StoreContextType {
     fetchBrands: (manufacturerId?: number) => Promise<void>;
     fetchModels: (brandId?: number) => Promise<void>;
     loadAllFilterOptions: () => Promise<void>;
+    fetchHomeData: () => Promise<void>;
   };
 }
 
@@ -193,6 +195,28 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, []);
 
+  const fetchHomeData = useCallback(async () => {
+    dispatch({ type: ActionType.FETCH_HOME_DATA_REQUEST });
+    try {
+      const response = await homeApi.getData();
+      const data = response.data.data;
+      dispatch({
+        type: ActionType.FETCH_HOME_DATA_SUCCESS,
+        payload: {
+          carousel: data?.carousel ?? [],
+          categories: data?.categories ?? [],
+          brands: data?.brands ?? [],
+          sections: data?.sections ?? [],
+        },
+      });
+    } catch (error) {
+      dispatch({
+        type: ActionType.FETCH_HOME_DATA_FAILURE,
+        payload: handleError(error),
+      });
+    }
+  }, []);
+
   const loadAllFilterOptions = useCallback(async () => {
     dispatch({
       type: ActionType.SET_GLOBAL_LOADING,
@@ -226,6 +250,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({
       fetchBrands,
       fetchModels,
       loadAllFilterOptions,
+      fetchHomeData,
     },
   };
 
@@ -256,4 +281,9 @@ export const useFilterOptions = () => {
 export const useGlobalLoading = () => {
   const { state } = useStore();
   return state.globalLoading;
+};
+
+export const useHomeData = () => {
+  const { state } = useStore();
+  return state.homeData;
 };

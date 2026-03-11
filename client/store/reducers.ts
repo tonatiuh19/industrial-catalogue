@@ -1,6 +1,15 @@
-import type { AppState, ProductsState, FilterOptionsState } from "./state";
+import type {
+  AppState,
+  ProductsState,
+  FilterOptionsState,
+  HomeDataState,
+} from "./state";
 import { ActionType, type Action } from "./actions";
-import { initialProductsState, initialFilterOptionsState } from "./state";
+import {
+  initialProductsState,
+  initialFilterOptionsState,
+  initialHomeDataState,
+} from "./state";
 
 // Products reducer
 export const productsReducer = (
@@ -130,6 +139,39 @@ export const filterOptionsReducer = (
   }
 };
 
+// Home data reducer
+export const homeDataReducer = (
+  state: HomeDataState,
+  action: Action,
+): HomeDataState => {
+  switch (action.type) {
+    case ActionType.FETCH_HOME_DATA_REQUEST:
+      return {
+        ...state,
+        loading: { isLoading: true },
+        error: { hasError: false },
+      };
+    case ActionType.FETCH_HOME_DATA_SUCCESS:
+      return {
+        ...state,
+        carousel: action.payload.carousel,
+        categories: action.payload.categories,
+        brands: action.payload.brands,
+        sections: action.payload.sections,
+        loading: { isLoading: false },
+        error: { hasError: false },
+      };
+    case ActionType.FETCH_HOME_DATA_FAILURE:
+      return {
+        ...state,
+        loading: { isLoading: false },
+        error: { hasError: true, errorMessage: action.payload },
+      };
+    default:
+      return state;
+  }
+};
+
 // Root reducer
 export const rootReducer = (state: AppState, action: Action): AppState => {
   switch (action.type) {
@@ -169,6 +211,15 @@ export const rootReducer = (state: AppState, action: Action): AppState => {
       return {
         ...state,
         filterOptions: filterOptionsReducer(state.filterOptions, action),
+      };
+
+    // Home data actions
+    case ActionType.FETCH_HOME_DATA_REQUEST:
+    case ActionType.FETCH_HOME_DATA_SUCCESS:
+    case ActionType.FETCH_HOME_DATA_FAILURE:
+      return {
+        ...state,
+        homeData: homeDataReducer(state.homeData, action),
       };
 
     default:

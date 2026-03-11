@@ -1,28 +1,37 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { getImageUrl } from "@/services/image-upload.service";
 
 interface CarouselSlide {
   id: number;
   title: string;
-  subtitle: string;
-  description: string;
-  backgroundImage: string;
-  ctaText: string;
-  ctaLink: string;
+  subtitle: string | null;
+  description: string | null;
+  background_image: string;
+  cta_text: string;
+  cta_link: string;
+  sort_order: number;
+  is_active: boolean;
 }
 
-const carouselSlides: CarouselSlide[] = [
+interface HeroCarouselProps {
+  slides?: CarouselSlide[];
+}
+
+const staticFallbackSlides: CarouselSlide[] = [
   {
     id: 1,
     title: "Donde la Calidad",
     subtitle: "Encuentra la Innovación",
     description:
       "Herramientas profesionales, equipamiento industrial y componentes de precisión para transformar tu negocio",
-    backgroundImage:
+    background_image:
       "https://disruptinglabs.com/data/api/data/industrial_catalogue/images/pexels-vladimirsrajber-18631420.jpg",
-    ctaText: "Ver Catálogo Completo",
-    ctaLink: "/catalog",
+    cta_text: "Ver Catálogo Completo",
+    cta_link: "/catalog",
+    sort_order: 1,
+    is_active: true,
   },
   {
     id: 2,
@@ -30,10 +39,12 @@ const carouselSlides: CarouselSlide[] = [
     subtitle: "Sin Límites",
     description:
       "Sistemas de transmisión de potencia, automatización y control industrial para maximizar la productividad de tu empresa",
-    backgroundImage:
+    background_image:
       "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-    ctaText: "Explorar Soluciones",
-    ctaLink: "/catalog",
+    cta_text: "Explorar Soluciones",
+    cta_link: "/catalog",
+    sort_order: 2,
+    is_active: true,
   },
   {
     id: 3,
@@ -41,10 +52,12 @@ const carouselSlides: CarouselSlide[] = [
     subtitle: "Resultados Excepcionales",
     description:
       "Sistemas neumáticos, hidráulicos y herramientas especializadas diseñadas para cada aplicación industrial específica",
-    backgroundImage:
+    background_image:
       "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-    ctaText: "Descubre Más",
-    ctaLink: "/catalog",
+    cta_text: "Descubre Más",
+    cta_link: "/catalog",
+    sort_order: 3,
+    is_active: true,
   },
   {
     id: 4,
@@ -52,16 +65,28 @@ const carouselSlides: CarouselSlide[] = [
     subtitle: "Primera Prioridad",
     description:
       "Equipos certificados y suministros industriales que garantizan operaciones seguras y cumplimiento normativo",
-    backgroundImage:
+    background_image:
       "https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-    ctaText: "Ver Productos",
-    ctaLink: "/catalog",
+    cta_text: "Ver Productos",
+    cta_link: "/catalog",
+    sort_order: 4,
+    is_active: true,
   },
 ];
 
-export default function HeroCarousel() {
+export default function HeroCarousel({
+  slides: slidesProp,
+}: HeroCarouselProps) {
+  const [slides, setSlides] = useState<CarouselSlide[]>(staticFallbackSlides);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+
+  useEffect(() => {
+    if (slidesProp && slidesProp.length > 0) {
+      setSlides(slidesProp);
+      setCurrentSlide(0);
+    }
+  }, [slidesProp]);
 
   // Auto-play functionality
   useEffect(() => {
@@ -77,7 +102,7 @@ export default function HeroCarousel() {
   const nextSlide = () => {
     if (!isTransitioning) {
       setIsTransitioning(true);
-      setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
       setTimeout(() => setIsTransitioning(false), 500);
     }
   };
@@ -85,9 +110,7 @@ export default function HeroCarousel() {
   const prevSlide = () => {
     if (!isTransitioning) {
       setIsTransitioning(true);
-      setCurrentSlide(
-        (prev) => (prev - 1 + carouselSlides.length) % carouselSlides.length,
-      );
+      setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
       setTimeout(() => setIsTransitioning(false), 500);
     }
   };
@@ -109,11 +132,11 @@ export default function HeroCarousel() {
           transform: `translateX(-${currentSlide * 100}%)`,
         }}
       >
-        {carouselSlides.map((slide, index) => (
+        {slides.map((slide, index) => (
           <div key={slide.id} className="relative w-full h-full flex-shrink-0">
             {/* Background Image */}
             <img
-              src={slide.backgroundImage}
+              src={getImageUrl(slide.background_image)}
               alt={slide.title}
               className="absolute inset-0 w-full h-full object-cover"
             />
@@ -184,10 +207,10 @@ export default function HeroCarousel() {
                       }`}
                     >
                       <Link
-                        to={slide.ctaLink}
+                        to={slide.cta_link}
                         className="group inline-flex items-center justify-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-[#c03818] text-white font-bold text-base sm:text-lg rounded-xl sm:rounded-2xl hover:bg-[#d94520] hover:shadow-2xl hover:shadow-[#c03818]/30 hover:scale-[1.02] transition-all duration-300 active:scale-95 touch-manipulation"
                       >
-                        {slide.ctaText}
+                        {slide.cta_text}
                         <ArrowRight
                           size={18}
                           className="sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform duration-200"
@@ -240,7 +263,7 @@ export default function HeroCarousel() {
 
       {/* Slide Indicators */}
       <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-2 sm:gap-3">
-        {carouselSlides.map((_, index) => (
+        {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
